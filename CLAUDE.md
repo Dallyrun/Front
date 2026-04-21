@@ -80,8 +80,16 @@ src/
 | Path | Component | 비고 |
 |---|---|---|
 | `/` | `pages/Home/HomePage` | 초기 랜딩 |
+| `/login` | `pages/Login/LoginPage` | 이메일/비밀번호 로그인 폼 |
 
 새 라우트 추가 시 `src/App.tsx` 의 `<Routes>` 에 등록하고 위 표에 추가한다.
+
+### Auth
+
+- 이메일/비밀번호 기반 로그인으로 시작한다 (소셜 로그인 미도입).
+- API: `src/api/auth.ts` 의 `loginWithEmail`, `signupWithEmail` 이 `apiRequest` 를 통해 백엔드와 통신 (`POST /api/auth/login`, `POST /api/auth/register`).
+- 전역 인증 상태(`token`, `user`)는 `src/stores/authStore.ts` 의 Zustand 스토어에서 관리. 현재는 메모리 기반이며, 영속화 도입 시 본 섹션과 함께 갱신한다.
+- 인증 관련 공용 타입은 `src/types/auth.ts` 에 정의한다.
 
 ### Path Alias
 
