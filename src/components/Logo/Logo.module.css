@@ -10,7 +10,8 @@
   display: block;
   object-fit: contain;
   user-select: none;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+  border-radius: 20%;
+  filter: drop-shadow(0 4px 12px rgba(31, 94, 255, 0.25));
 }
 
 .wordmark {

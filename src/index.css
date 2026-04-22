@@ -10,10 +10,10 @@
   font-weight: 400;
   color-scheme: light dark;
 
-  /* Design tokens — dark (default) */
-  --brand-start: #7aa7ff;
-  --brand-end: #b48bff;
-  --accent-ring: rgba(122, 167, 255, 0.35);
+  /* Design tokens — dark (default). 로고 배경 파랑(#1f5eff)을 기준으로 한 팔레트. */
+  --brand-start: #5e90ff;
+  --brand-end: #1f5eff;
+  --accent-ring: rgba(31, 94, 255, 0.38);
 
   --bg: #0f1016;
   --surface: rgba(255, 255, 255, 0.04);
@@ -60,8 +60,8 @@ body,
 
 body {
   background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(122, 167, 255, 0.12), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 90% 100%, rgba(180, 139, 255, 0.1), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(31, 94, 255, 0.16), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 100%, rgba(31, 94, 255, 0.08), transparent 60%),
     var(--bg);
   background-attachment: fixed;
 }
@@ -83,9 +83,9 @@ button {
 
 @media (prefers-color-scheme: light) {
   :root {
-    --brand-start: #3868d6;
-    --brand-end: #7b4ef0;
-    --accent-ring: rgba(56, 104, 214, 0.25);
+    --brand-start: #1f5eff;
+    --brand-end: #0d3fc9;
+    --accent-ring: rgba(31, 94, 255, 0.24);
 
     --bg: #f7f8fb;
     --surface: #ffffff;
@@ -106,8 +106,8 @@ button {
 
   body {
     background:
-      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(56, 104, 214, 0.08), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 90% 100%, rgba(123, 78, 240, 0.06), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(31, 94, 255, 0.1), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 90% 100%, rgba(31, 94, 255, 0.05), transparent 60%),
       var(--bg);
   }
 }
