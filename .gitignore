@@ -44,3 +44,6 @@ coverage
 
 # Claude Code - 사용자 로컬 권한 오버라이드 (공유 금지)
 .claude/settings.local.json
+
+# TypeScript incremental build cache
+*.tsbuildinfo
