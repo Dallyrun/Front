@@ -18,16 +18,16 @@ npm run dev
 
 ## Scripts
 
-| Command | 설명 |
-|---|---|
-| `npm run dev` | 개발 서버 |
-| `npm run build` | 타입체크 + 프로덕션 빌드 |
-| `npm run preview` | 빌드 결과 로컬 프리뷰 |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier 자동 포맷 |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run test` | Vitest 1회 실행 |
-| `npm run test:watch` | Vitest watch 모드 |
+| Command              | 설명                     |
+| -------------------- | ------------------------ |
+| `npm run dev`        | 개발 서버                |
+| `npm run build`      | 타입체크 + 프로덕션 빌드 |
+| `npm run preview`    | 빌드 결과 로컬 프리뷰    |
+| `npm run lint`       | ESLint                   |
+| `npm run format`     | Prettier 자동 포맷       |
+| `npm run typecheck`  | `tsc --noEmit`           |
+| `npm run test`       | Vitest 1회 실행          |
+| `npm run test:watch` | Vitest watch 모드        |
 
 ## Environment
 

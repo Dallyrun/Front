@@ -21,6 +21,23 @@ npm run test                # Vitest 1회 실행
 npm run test:watch          # Vitest watch 모드
 ```
 
+## CI (GitHub Actions)
+
+`.github/workflows/ci.yml` — `main` 브랜치 push 및 PR 시 자동 실행.
+
+| Task         | 스크립트               | 목적                 |
+| ------------ | ---------------------- | -------------------- |
+| typecheck    | `npm run typecheck`    | TypeScript 타입 검사 |
+| lint         | `npm run lint`         | ESLint               |
+| format:check | `npm run format:check` | Prettier 포맷 검사   |
+| test         | `npm run test`         | Vitest               |
+| build        | `npm run build`        | 프로덕션 빌드        |
+
+- 5개 task 가 matrix 로 **병렬 실행** (GitHub UI 에 각각 독립 체크로 표시).
+- `fail-fast: false` — 하나 실패해도 나머지 결과 모두 수집.
+- 같은 브랜치에 새 push 가 오면 이전 실행 자동 취소 (`concurrency`).
+- Node 20, `npm ci`, setup-node 의 npm 캐시 사용.
+
 ## Workflow
 
 - 작업 시작 시 반드시 **플랜 모드**로 계획을 세운 뒤 승인받고 구현한다.
@@ -44,16 +61,16 @@ npm run test:watch          # Vitest watch 모드
 
 ### Tech Stack
 
-| 영역 | 라이브러리 |
-|---|---|
-| 빌드 | Vite 5, `@vitejs/plugin-react` |
-| 언어 | React 18, TypeScript 5 (strict, `noUncheckedIndexedAccess`) |
-| 라우팅 | `react-router-dom` v6 |
-| 서버 상태 | `@tanstack/react-query` v5 |
-| 클라이언트 상태 | `zustand` v4 |
-| 스타일 | Plain CSS + CSS Modules (`*.module.css`) |
-| 린트 / 포맷 | ESLint 9 (flat config) + Prettier 3 |
-| 테스트 | Vitest + @testing-library/react + jsdom |
+| 영역            | 라이브러리                                                  |
+| --------------- | ----------------------------------------------------------- |
+| 빌드            | Vite 5, `@vitejs/plugin-react`                              |
+| 언어            | React 18, TypeScript 5 (strict, `noUncheckedIndexedAccess`) |
+| 라우팅          | `react-router-dom` v6                                       |
+| 서버 상태       | `@tanstack/react-query` v5                                  |
+| 클라이언트 상태 | `zustand` v4                                                |
+| 스타일          | Plain CSS + CSS Modules (`*.module.css`)                    |
+| 린트 / 포맷     | ESLint 9 (flat config) + Prettier 3                         |
+| 테스트          | Vitest + @testing-library/react + jsdom                     |
 
 ### Directory Layout
 
@@ -77,9 +94,9 @@ src/
 
 ### Routes
 
-| Path | Component | 비고 |
-|---|---|---|
-| `/` | `pages/Home/HomePage` | 초기 랜딩 |
+| Path     | Component               | 비고                      |
+| -------- | ----------------------- | ------------------------- |
+| `/`      | `pages/Home/HomePage`   | 초기 랜딩                 |
 | `/login` | `pages/Login/LoginPage` | 이메일/비밀번호 로그인 폼 |
 
 새 라우트 추가 시 `src/App.tsx` 의 `<Routes>` 에 등록하고 위 표에 추가한다.
