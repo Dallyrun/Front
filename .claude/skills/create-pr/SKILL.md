@@ -32,6 +32,7 @@ Dallyrun Front 저장소에서 PR 생성 플로우를 표준화한다.
 4. **PR 초안 작성**
    - 제목: Conventional Commits prefix + 한 줄 요약 (70자 이하)
    - 본문 템플릿:
+
      ```
      ## Summary
      - 1~3줄 요약
@@ -49,6 +50,7 @@ Dallyrun Front 저장소에서 PR 생성 플로우를 표준화한다.
      ## Follow-ups
      - 이번 스코프 밖이지만 인지하고 있는 후속 작업
      ```
+
    - 연관 이슈가 있으면 본문 맨 끝에 `Closes #<num>`
 
 5. **PR 생성**
