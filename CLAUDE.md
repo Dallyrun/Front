@@ -158,7 +158,7 @@ src/
 - [`.claude/settings.json`](./.claude/settings.json) — Claude Code permissions (npm / git / gh 허용, `.env*` 읽기·쓰기 차단)
 - [`.claude/commands/`](./.claude/commands) — 슬래시 커맨드
   - [`/dev`](./.claude/commands/dev.md) · [`/check`](./.claude/commands/check.md) · [`/test`](./.claude/commands/test.md) · [`/review-pr`](./.claude/commands/review-pr.md) · [`/fix-issue`](./.claude/commands/fix-issue.md)
-- [`.claude/rules/`](./.claude/rules) — 본 CLAUDE.md 의 각 섹션을 찾아보기 편하도록 분리한 사본
-  - [`react-component.md`](./.claude/rules/react-component.md) · [`testing.md`](./.claude/rules/testing.md) · [`styling.md`](./.claude/rules/styling.md) · [`conventional-commits.md`](./.claude/rules/conventional-commits.md)
 - [`.claude/skills/`](./.claude/skills) — 프로젝트 전용 스킬
   - [`create-pr/`](./.claude/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
+
+> 프로젝트 규칙(React/테스트/스타일/커밋)은 본 `CLAUDE.md` 가 단일 소스(SSOT)다. Claude Code 가 자동으로 읽는 파일도 `CLAUDE.md` 뿐이므로 룰 파일을 별도 디렉터리로 분리하지 않는다.
