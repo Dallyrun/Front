@@ -113,7 +113,7 @@ src/
 - 비밀번호 제약: **8자 이상 100자 이하** (길이만). Front 클라이언트 검증 + 백엔드에서도 동일 규칙 강제할 것.
 - 전역 인증 상태(`token`, `user`)는 `src/stores/authStore.ts` 의 Zustand 스토어에서 관리. 현재는 메모리 기반이며, 영속화 도입 시 본 섹션과 함께 갱신한다.
 - 인증 관련 공용 타입은 `src/types/auth.ts` 에 정의한다.
-- 공용 브랜드 컴포넌트: `src/components/Logo/Logo.tsx` (텍스트 로고, size `sm|md|lg`).
+- 공용 브랜드 컴포넌트: `src/components/Logo/Logo.tsx` — 아이콘 이미지(`src/asset/dallyrunicon.png`) + 그라데이션 wordmark + tagline. props: `size` `sm|md|lg`, `withIcon`, `withTagline`, `as`.
 
 ### Path Alias
 

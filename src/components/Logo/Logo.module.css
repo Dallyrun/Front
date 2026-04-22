@@ -6,6 +6,13 @@
   text-align: center;
 }
 
+.icon {
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+}
+
 .wordmark {
   margin: 0;
   font-weight: 800;
@@ -23,6 +30,24 @@
   font-size: 0.875rem;
   color: var(--text-muted);
   letter-spacing: -0.01em;
+}
+
+.sm .icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.25rem;
+}
+
+.md .icon {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 0.5rem;
+}
+
+.lg .icon {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 0.75rem;
 }
 
 .sm .wordmark {
