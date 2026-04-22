@@ -83,7 +83,7 @@ src/
 ├─ api/                # 백엔드 API 클라이언트 (fetch 래퍼 등)
 ├─ pages/              # 라우트 단위 페이지. 컴포넌트명 폴더로 묶음
 │  └─ <Page>/<Page>.tsx, .module.css, .test.tsx
-├─ components/         # 재사용 가능한 공용 UI 컴포넌트
+├─ components/         # 재사용 가능한 공용 UI 컴포넌트 (e.g. `Logo/`)
 ├─ hooks/              # 공용 커스텀 훅 (`useXxx`)
 ├─ stores/             # Zustand 스토어 (전역 클라이언트 상태)
 ├─ types/              # 프로젝트 공용 타입
@@ -94,19 +94,26 @@ src/
 
 ### Routes
 
-| Path     | Component               | 비고                      |
-| -------- | ----------------------- | ------------------------- |
-| `/`      | `pages/Home/HomePage`   | 초기 랜딩                 |
-| `/login` | `pages/Login/LoginPage` | 이메일/비밀번호 로그인 폼 |
+| Path      | Component                 | 비고                                                       |
+| --------- | ------------------------- | ---------------------------------------------------------- |
+| `/`       | `pages/Home/HomePage`     | 초기 랜딩                                                  |
+| `/login`  | `pages/Login/LoginPage`   | 이메일/비밀번호 로그인 폼 + 로고 + 회원가입 링크           |
+| `/signup` | `pages/Signup/SignupPage` | 이메일/비밀번호/비밀번호 확인/프로필 이미지/닉네임 가입 폼 |
 
 새 라우트 추가 시 `src/App.tsx` 의 `<Routes>` 에 등록하고 위 표에 추가한다.
 
 ### Auth
 
-- 이메일/비밀번호 기반 로그인으로 시작한다 (소셜 로그인 미도입).
-- API: `src/api/auth.ts` 의 `loginWithEmail`, `signupWithEmail` 이 `apiRequest` 를 통해 백엔드와 통신 (`POST /api/auth/login`, `POST /api/auth/register`).
+- 이메일/비밀번호 기반 로그인/가입으로 시작한다 (소셜 로그인 미도입).
+- API 엔드포인트 계약:
+  - `POST /api/auth/login` — JSON: `{ email, password }` → `AuthResponse`
+  - `POST /api/auth/register` — **multipart/form-data** 필드: `email`, `password`, `nickname`, 선택적 파일 `profileImage` → `AuthResponse`
+- `src/api/client.ts` 의 `apiRequest<T>` 는 body 가 `FormData` 이면 `Content-Type` 을 설정하지 않고 그대로 전송하여 multipart 를 지원한다.
+- API 함수는 `src/api/auth.ts` 의 `loginWithEmail`, `signupWithEmail`. `signupWithEmail` 은 `SignupRequest` 를 내부에서 FormData 로 변환.
+- 비밀번호 제약: **8자 이상 100자 이하** (길이만). Front 클라이언트 검증 + 백엔드에서도 동일 규칙 강제할 것.
 - 전역 인증 상태(`token`, `user`)는 `src/stores/authStore.ts` 의 Zustand 스토어에서 관리. 현재는 메모리 기반이며, 영속화 도입 시 본 섹션과 함께 갱신한다.
 - 인증 관련 공용 타입은 `src/types/auth.ts` 에 정의한다.
+- 공용 브랜드 컴포넌트: `src/components/Logo/Logo.tsx` — 아이콘 이미지(`src/asset/dallyrunicon.png`) + 그라데이션 wordmark + tagline. props: `size` `sm|md|lg`, `withIcon`, `withTagline`, `as`.
 
 ### Path Alias
 

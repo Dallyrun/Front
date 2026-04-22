@@ -17,13 +17,20 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers, ...rest } = options;
 
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
+  // FormData 인 경우 Content-Type 을 설정하지 않아야 브라우저가 boundary 포함해서 자동 설정한다.
+  const finalHeaders: HeadersInit = isFormData
+    ? { ...headers }
+    : { 'Content-Type': 'application/json', ...headers };
+
+  const finalBody: BodyInit | undefined =
+    body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body);
+
   const response = await fetch(`${BASE_URL}${path}`, {
     ...rest,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: finalHeaders,
+    body: finalBody,
   });
 
   if (!response.ok) {

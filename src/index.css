@@ -9,8 +9,34 @@
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #1a1a1a;
+
+  /* Design tokens — dark (default) */
+  --brand-start: #7aa7ff;
+  --brand-end: #b48bff;
+  --accent-ring: rgba(122, 167, 255, 0.35);
+
+  --bg: #0f1016;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  --text: rgba(255, 255, 255, 0.92);
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --text-subtle: rgba(255, 255, 255, 0.4);
+
+  --danger: #ff6b7a;
+  --danger-bg: rgba(255, 107, 122, 0.1);
+  --success: #4ade80;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  color: var(--text);
+  background-color: var(--bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -32,13 +58,22 @@ body,
   min-height: 100vh;
 }
 
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(122, 167, 255, 0.12), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 100%, rgba(180, 139, 255, 0.1), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
 a {
-  color: #7aa7ff;
+  color: var(--brand-start);
   text-decoration: none;
+  transition: color 120ms ease;
 }
 
 a:hover {
-  text-decoration: underline;
+  color: var(--brand-end);
 }
 
 button {
@@ -48,10 +83,31 @@ button {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #1a1a1a;
-    background-color: #ffffff;
+    --brand-start: #3868d6;
+    --brand-end: #7b4ef0;
+    --accent-ring: rgba(56, 104, 214, 0.25);
+
+    --bg: #f7f8fb;
+    --surface: #ffffff;
+    --surface-2: #f2f3f7;
+    --border: rgba(15, 16, 22, 0.08);
+    --border-strong: rgba(15, 16, 22, 0.16);
+
+    --text: #14151a;
+    --text-muted: rgba(20, 21, 26, 0.64);
+    --text-subtle: rgba(20, 21, 26, 0.4);
+
+    --danger: #e03651;
+    --danger-bg: rgba(224, 54, 81, 0.08);
+    --success: #16a34a;
+
+    --shadow-soft: 0 10px 30px rgba(15, 16, 22, 0.08);
   }
-  a {
-    color: #3868d6;
+
+  body {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(56, 104, 214, 0.08), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 90% 100%, rgba(123, 78, 240, 0.06), transparent 60%),
+      var(--bg);
   }
 }
