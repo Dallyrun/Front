@@ -35,13 +35,14 @@ describe('LoginPage', () => {
     useAuthStore.getState().clear();
   });
 
-  it('이메일/비밀번호 입력 필드와 제출 버튼을 렌더한다', () => {
+  it('로고와 이메일/비밀번호 입력, 제출 버튼, 회원가입 링크를 렌더한다', () => {
     renderLoginPage();
 
-    expect(screen.getByRole('heading', { level: 1, name: /로그인/ })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /이메일/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Dallyrun/ })).toBeInTheDocument();
+    expect(screen.getByLabelText(/이메일/)).toBeInTheDocument();
     expect(screen.getByLabelText(/비밀번호/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /로그인/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /로그인하기/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /회원가입/ })).toBeInTheDocument();
   });
 
   it('폼 제출 시 loginWithEmail 이 올바른 인자로 호출되고 스토어에 토큰이 저장된다', async () => {
@@ -54,9 +55,9 @@ describe('LoginPage', () => {
     const user = userEvent.setup();
     renderLoginPage();
 
-    await user.type(screen.getByRole('textbox', { name: /이메일/ }), 'test@example.com');
+    await user.type(screen.getByLabelText(/이메일/), 'test@example.com');
     await user.type(screen.getByLabelText(/비밀번호/), 'secret123');
-    await user.click(screen.getByRole('button', { name: /로그인/ }));
+    await user.click(screen.getByRole('button', { name: /로그인하기/ }));
 
     expect(loginWithEmailMock).toHaveBeenCalledTimes(1);
     expect(loginWithEmailMock.mock.calls[0]?.[0]).toEqual({
@@ -64,7 +65,6 @@ describe('LoginPage', () => {
       password: 'secret123',
     });
 
-    // useMutation 콜백이 실행될 때까지 대기
     await vi.waitFor(() => {
       const state = useAuthStore.getState();
       expect(state.token?.accessToken).toBe('access-token');

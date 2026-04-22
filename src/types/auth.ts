@@ -7,6 +7,7 @@ export interface AuthUser {
   id: string;
   email: string;
   nickname: string;
+  profileImageUrl?: string | null;
 }
 
 export interface LoginRequest {
@@ -14,8 +15,11 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface SignupRequest extends LoginRequest {
+export interface SignupRequest {
+  email: string;
+  password: string;
   nickname: string;
+  profileImage?: File | null;
 }
 
 export interface AuthResponse {

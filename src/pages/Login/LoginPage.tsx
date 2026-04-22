@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { loginWithEmail } from '@/api/auth';
 import { ApiError } from '@/api/client';
+import Logo from '@/components/Logo/Logo';
 import { useAuthStore } from '@/stores/authStore';
 import type { AuthResponse, LoginRequest } from '@/types/auth';
 
@@ -31,30 +32,40 @@ function LoginPage() {
 
   const errorMessage = mutation.error
     ? mutation.error instanceof ApiError
-      ? `로그인 실패 (${mutation.error.status})`
+      ? `로그인에 실패했습니다 (${mutation.error.status})`
       : mutation.error.message
     : null;
 
   return (
     <main className={styles.page}>
-      <h1 className={styles.title}>로그인</h1>
-      <form className={styles.form} onSubmit={handleSubmit} noValidate>
-        <label className={styles.field}>
-          <span className={styles.label}>이메일</span>
+      <div className={styles.header}>
+        <Logo size="md" />
+      </div>
+
+      <form className={styles.card} onSubmit={handleSubmit} noValidate>
+        <div className={styles.field}>
+          <label htmlFor="login-email" className={styles.label}>
+            이메일
+          </label>
           <input
+            id="login-email"
             type="email"
             name="email"
             autoComplete="email"
+            placeholder="you@example.com"
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className={styles.input}
           />
-        </label>
+        </div>
 
-        <label className={styles.field}>
-          <span className={styles.label}>비밀번호</span>
+        <div className={styles.field}>
+          <label htmlFor="login-password" className={styles.label}>
+            비밀번호
+          </label>
           <input
+            id="login-password"
             type="password"
             name="password"
             autoComplete="current-password"
@@ -63,7 +74,7 @@ function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
             className={styles.input}
           />
-        </label>
+        </div>
 
         {errorMessage && (
           <p role="alert" className={styles.error}>
@@ -72,12 +83,11 @@ function LoginPage() {
         )}
 
         <button type="submit" className={styles.submit} disabled={mutation.isPending}>
-          {mutation.isPending ? '로그인 중…' : '로그인'}
+          {mutation.isPending ? '로그인 중…' : '로그인하기'}
         </button>
       </form>
 
-      {/* TODO: 회원가입 페이지는 별도 PR에서 구현 */}
-      <p className={styles.signupHint}>
+      <p className={styles.footer}>
         아직 계정이 없나요? <Link to="/signup">회원가입</Link>
       </p>
     </main>
