@@ -150,3 +150,15 @@ src/
 - UI 는 **역할(role) 기반 쿼리** 우선 (`getByRole`, `getByLabelText`).
 - 네트워크 호출은 mocking 또는 MSW 도입 전까지 직접 `apiRequest` 를 모킹한다.
 - 새 기능 PR 은 관련 테스트가 포함되어야 리뷰 대상이 된다.
+
+## See also
+
+저장소 루트의 `.claude/` 에 프로젝트 전용 설정이 있다.
+
+- [`.claude/settings.json`](./.claude/settings.json) — Claude Code permissions (npm / git / gh 허용, `.env*` 읽기·쓰기 차단)
+- [`.claude/commands/`](./.claude/commands) — 슬래시 커맨드
+  - [`/dev`](./.claude/commands/dev.md) · [`/check`](./.claude/commands/check.md) · [`/test`](./.claude/commands/test.md) · [`/review-pr`](./.claude/commands/review-pr.md) · [`/fix-issue`](./.claude/commands/fix-issue.md)
+- [`.claude/rules/`](./.claude/rules) — 본 CLAUDE.md 의 각 섹션을 찾아보기 편하도록 분리한 사본
+  - [`react-component.md`](./.claude/rules/react-component.md) · [`testing.md`](./.claude/rules/testing.md) · [`styling.md`](./.claude/rules/styling.md) · [`conventional-commits.md`](./.claude/rules/conventional-commits.md)
+- [`.claude/skills/`](./.claude/skills) — 프로젝트 전용 스킬
+  - [`create-pr/`](./.claude/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
