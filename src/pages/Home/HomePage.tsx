@@ -1,10 +1,22 @@
+import { Link } from 'react-router-dom';
+
+import Logo from '@/components/Logo/Logo';
+
 import styles from './HomePage.module.css';
 
 function HomePage() {
   return (
     <main className={styles.home}>
-      <h1 className={styles.title}>Dallyrun</h1>
-      <p className={styles.subtitle}>달리런 웹 프론트 초기 셋업이 완료되었습니다.</p>
+      <Logo size="lg" />
+
+      <div className={styles.actions}>
+        <Link to="/login" className={styles.primary}>
+          로그인
+        </Link>
+        <Link to="/signup" className={styles.secondary}>
+          회원가입
+        </Link>
+      </div>
     </main>
   );
 }
