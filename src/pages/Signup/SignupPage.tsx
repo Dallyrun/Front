@@ -26,6 +26,7 @@ const PASSWORD_RULES: PasswordRule[] = [
   { key: 'hasLetter', label: '영문 포함' },
   { key: 'hasDigit', label: '숫자 포함' },
   { key: 'hasSpecial', label: '특수기호 포함' },
+  { key: 'onlyAllowedChars', label: '허용 문자만 사용' },
 ];
 
 function SignupPage() {

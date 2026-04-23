@@ -111,6 +111,32 @@ describe('SignupPage', () => {
     expect(screen.getByLabelText(/특수기호 포함 충족/)).toBeInTheDocument();
   });
 
+  it('비ASCII 문자(한글/공백/이모지)가 포함되면 제출 버튼이 비활성 상태다', async () => {
+    const user = userEvent.setup();
+    renderSignupPage();
+
+    const submitButton = screen.getByRole('button', { name: /회원가입하기/ });
+    const passwordInput = screen.getByLabelText(/^비밀번호$/);
+    const passwordConfirmInput = screen.getByLabelText(/비밀번호 확인/);
+
+    await user.type(screen.getByLabelText(/이메일/), 'test@example.com');
+    await user.type(screen.getByLabelText(/닉네임/), '러너');
+
+    // 한글이 섞인 경우 — 다른 규칙은 전부 충족하지만 허용 문자 위반
+    await user.type(passwordInput, 'Password1!가');
+    await user.type(passwordConfirmInput, 'Password1!가');
+    expect(screen.getByLabelText(/허용 문자만 사용 미충족/)).toBeInTheDocument();
+    expect(submitButton).toBeDisabled();
+
+    // 공백이 섞인 경우
+    await user.clear(passwordInput);
+    await user.clear(passwordConfirmInput);
+    await user.type(passwordInput, 'Pass 1234!');
+    await user.type(passwordConfirmInput, 'Pass 1234!');
+    expect(screen.getByLabelText(/허용 문자만 사용 미충족/)).toBeInTheDocument();
+    expect(submitButton).toBeDisabled();
+  });
+
   it('비밀번호 확인이 일치하지 않으면 에러 메시지와 함께 제출이 막힌다', async () => {
     const user = userEvent.setup();
     renderSignupPage();

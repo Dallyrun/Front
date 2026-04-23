@@ -70,10 +70,48 @@ describe('evaluatePassword', () => {
   });
 });
 
+describe('onlyAllowedChars', () => {
+  it('빈 문자열은 false', () => {
+    expect(evaluatePassword('').onlyAllowedChars).toBe(false);
+  });
+
+  it('ASCII 영문/숫자/특수기호 조합이면 true', () => {
+    expect(evaluatePassword('Password123!').onlyAllowedChars).toBe(true);
+    expect(evaluatePassword('abcABC012!@#').onlyAllowedChars).toBe(true);
+    expect(evaluatePassword('a').onlyAllowedChars).toBe(true);
+  });
+
+  it('공백이 포함되면 false', () => {
+    expect(evaluatePassword('Pass word1!').onlyAllowedChars).toBe(false);
+    expect(evaluatePassword(' Password1!').onlyAllowedChars).toBe(false);
+    expect(evaluatePassword('Password1! ').onlyAllowedChars).toBe(false);
+  });
+
+  it('한글이 포함되면 false', () => {
+    expect(evaluatePassword('Password1!가').onlyAllowedChars).toBe(false);
+    expect(evaluatePassword('달리런Password1!').onlyAllowedChars).toBe(false);
+  });
+
+  it('이모지가 포함되면 false', () => {
+    expect(evaluatePassword('Password1!🔥').onlyAllowedChars).toBe(false);
+  });
+
+  it('전각문자가 포함되면 false', () => {
+    expect(evaluatePassword('Password1！abc').onlyAllowedChars).toBe(false); // 전각 !
+    expect(evaluatePassword('Ａbcdefg1!').onlyAllowedChars).toBe(false); // 전각 A
+  });
+
+  it('제어문자(탭/개행)가 포함되면 false', () => {
+    expect(evaluatePassword('Pass\t1234!').onlyAllowedChars).toBe(false);
+    expect(evaluatePassword('Pass\n1234!').onlyAllowedChars).toBe(false);
+  });
+});
+
 describe('isPasswordValid', () => {
-  it('네 가지 규칙이 모두 충족될 때만 true', () => {
+  it('다섯 가지 규칙이 모두 충족될 때만 true', () => {
     expect(isPasswordValid('Abcd1234!')).toBe(true);
     expect(isPasswordValid('Qwerty12@')).toBe(true);
+    expect(isPasswordValid('Password123!')).toBe(true);
   });
 
   it('한 가지라도 빠지면 false', () => {
@@ -82,5 +120,14 @@ describe('isPasswordValid', () => {
     expect(isPasswordValid('12345678!')).toBe(false); // 영문 없음
     expect(isPasswordValid('abcdefgh1')).toBe(false); // 특수문자 없음
     expect(isPasswordValid('Ab1!')).toBe(false); // 길이 부족
+  });
+
+  it('서버 스펙 샘플과 동일하게 판정한다', () => {
+    expect(isPasswordValid('Password123!')).toBe(true);
+    expect(isPasswordValid('password')).toBe(false); // 숫자·특수기호 없음
+    expect(isPasswordValid('Password123')).toBe(false); // 특수기호 없음
+    expect(isPasswordValid('Pass 1!')).toBe(false); // 공백 + 길이 미달
+    expect(isPasswordValid('Password1!가')).toBe(false); // 비-ASCII
+    expect(isPasswordValid('Aa1!' + 'a'.repeat(28))).toBe(false); // 32자 (> 30)
   });
 });
