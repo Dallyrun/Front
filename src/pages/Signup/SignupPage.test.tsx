@@ -29,6 +29,13 @@ function renderSignupPage() {
   );
 }
 
+async function fillCommonFields(user: ReturnType<typeof userEvent.setup>, password: string) {
+  await user.type(screen.getByLabelText(/이메일/), 'test@example.com');
+  await user.type(screen.getByLabelText(/^비밀번호$/), password);
+  await user.type(screen.getByLabelText(/비밀번호 확인/), password);
+  await user.type(screen.getByLabelText(/닉네임/), '러너');
+}
+
 describe('SignupPage', () => {
   beforeEach(() => {
     signupWithEmailMock.mockReset();
@@ -47,17 +54,61 @@ describe('SignupPage', () => {
     expect(screen.getByRole('link', { name: /로그인/ })).toBeInTheDocument();
   });
 
-  it('비밀번호가 8자 미만이면 제출 버튼이 비활성 상태다', async () => {
+  it('비밀번호가 규칙 중 하나라도 위반하면 제출 버튼이 비활성 상태다', async () => {
     const user = userEvent.setup();
     renderSignupPage();
 
-    await user.type(screen.getByLabelText(/이메일/), 'test@example.com');
-    await user.type(screen.getByLabelText(/^비밀번호$/), 'short');
-    await user.type(screen.getByLabelText(/비밀번호 확인/), 'short');
-    await user.type(screen.getByLabelText(/닉네임/), '러너');
+    const submitButton = screen.getByRole('button', { name: /회원가입하기/ });
+    const passwordInput = screen.getByLabelText(/^비밀번호$/);
+    const passwordConfirmInput = screen.getByLabelText(/비밀번호 확인/);
 
-    expect(screen.getByRole('button', { name: /회원가입하기/ })).toBeDisabled();
-    expect(screen.getByText(/최소 8자 이상/)).toBeInTheDocument();
+    // 길이 미달
+    await fillCommonFields(user, 'Ab1!');
+    expect(submitButton).toBeDisabled();
+
+    // 영문 없음
+    await user.clear(passwordInput);
+    await user.clear(passwordConfirmInput);
+    await user.type(passwordInput, '12345678!');
+    await user.type(passwordConfirmInput, '12345678!');
+    expect(submitButton).toBeDisabled();
+
+    // 숫자 없음
+    await user.clear(passwordInput);
+    await user.clear(passwordConfirmInput);
+    await user.type(passwordInput, 'abcdefgh!');
+    await user.type(passwordConfirmInput, 'abcdefgh!');
+    expect(submitButton).toBeDisabled();
+
+    // 특수문자 없음
+    await user.clear(passwordInput);
+    await user.clear(passwordConfirmInput);
+    await user.type(passwordInput, 'abcdefg1');
+    await user.type(passwordConfirmInput, 'abcdefg1');
+    expect(submitButton).toBeDisabled();
+  });
+
+  it('규칙 체크리스트가 실시간으로 충족 여부를 표시한다', async () => {
+    const user = userEvent.setup();
+    renderSignupPage();
+
+    const passwordInput = screen.getByLabelText(/^비밀번호$/);
+
+    // 길이만 만족
+    await user.type(passwordInput, 'abcdefgh');
+    const lengthRule = screen.getByLabelText(/8~30자 길이 충족/);
+    expect(lengthRule).toBeInTheDocument();
+    expect(screen.getByLabelText(/영문 포함 충족/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/숫자 포함 미충족/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/특수기호 포함 미충족/)).toBeInTheDocument();
+
+    // 숫자/특수기호 추가해 모두 충족
+    await user.clear(passwordInput);
+    await user.type(passwordInput, 'Abcd1234!');
+    expect(screen.getByLabelText(/8~30자 길이 충족/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/영문 포함 충족/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/숫자 포함 충족/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/특수기호 포함 충족/)).toBeInTheDocument();
   });
 
   it('비밀번호 확인이 일치하지 않으면 에러 메시지와 함께 제출이 막힌다', async () => {
@@ -65,8 +116,8 @@ describe('SignupPage', () => {
     renderSignupPage();
 
     await user.type(screen.getByLabelText(/이메일/), 'test@example.com');
-    await user.type(screen.getByLabelText(/^비밀번호$/), 'secret12345');
-    await user.type(screen.getByLabelText(/비밀번호 확인/), 'different99');
+    await user.type(screen.getByLabelText(/^비밀번호$/), 'Abcd1234!');
+    await user.type(screen.getByLabelText(/비밀번호 확인/), 'Different99!');
     await user.type(screen.getByLabelText(/닉네임/), '러너');
 
     expect(screen.getByText(/일치하지 않습니다/)).toBeInTheDocument();
@@ -82,10 +133,7 @@ describe('SignupPage', () => {
     const user = userEvent.setup();
     renderSignupPage();
 
-    await user.type(screen.getByLabelText(/이메일/), 'test@example.com');
-    await user.type(screen.getByLabelText(/^비밀번호$/), 'secret12345');
-    await user.type(screen.getByLabelText(/비밀번호 확인/), 'secret12345');
-    await user.type(screen.getByLabelText(/닉네임/), '러너');
+    await fillCommonFields(user, 'Abcd1234!');
 
     const submitButton = screen.getByRole('button', { name: /회원가입하기/ });
     expect(submitButton).toBeEnabled();
@@ -95,7 +143,7 @@ describe('SignupPage', () => {
     const payload = signupWithEmailMock.mock.calls[0]?.[0];
     expect(payload).toMatchObject({
       email: 'test@example.com',
-      password: 'secret12345',
+      password: 'Abcd1234!',
       nickname: '러너',
       profileImage: null,
     });

@@ -87,7 +87,7 @@ src/
 ├─ hooks/              # 공용 커스텀 훅 (`useXxx`)
 ├─ stores/             # Zustand 스토어 (전역 클라이언트 상태)
 ├─ types/              # 프로젝트 공용 타입
-├─ utils/              # 순수 유틸 함수
+├─ utils/              # 순수 유틸 함수 (e.g. `password.ts` — 비밀번호 규칙 검증)
 └─ test/
    └─ setup.ts         # @testing-library/jest-dom 매처 등록
 ```
@@ -110,7 +110,7 @@ src/
   - `POST /api/auth/register` — **multipart/form-data** 필드: `email`, `password`, `nickname`, 선택적 파일 `profileImage` → `AuthResponse`
 - `src/api/client.ts` 의 `apiRequest<T>` 는 body 가 `FormData` 이면 `Content-Type` 을 설정하지 않고 그대로 전송하여 multipart 를 지원한다.
 - API 함수는 `src/api/auth.ts` 의 `loginWithEmail`, `signupWithEmail`. `signupWithEmail` 은 `SignupRequest` 를 내부에서 FormData 로 변환.
-- 비밀번호 제약: **8자 이상 100자 이하** (길이만). Front 클라이언트 검증 + 백엔드에서도 동일 규칙 강제할 것.
+- 비밀번호 제약: **8자 이상 30자 이하** + **영문자(대소문자 무관)** + **숫자** + **ASCII 특수기호** 모두 포함. 검증 로직은 `src/utils/password.ts` 의 `evaluatePassword` / `isPasswordValid` 에 있고 SignupPage 는 각 규칙을 체크리스트로 실시간 표시한다. 백엔드도 동일 규칙을 강제할 것.
 - 전역 인증 상태(`token`, `user`)는 `src/stores/authStore.ts` 의 Zustand 스토어에서 관리. 현재는 메모리 기반이며, 영속화 도입 시 본 섹션과 함께 갱신한다.
 - 인증 관련 공용 타입은 `src/types/auth.ts` 에 정의한다.
 - 공용 브랜드 컴포넌트: `src/components/Logo/Logo.tsx` — 아이콘 이미지(`src/asset/dallyrunicon.png`) + 그라데이션 wordmark + tagline. props: `size` `sm|md|lg`, `withIcon`, `withTagline`, `as`.
