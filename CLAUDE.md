@@ -80,16 +80,26 @@ src/
 ├─ App.tsx             # 라우트 정의
 ├─ index.css           # 전역 스타일 / 루트 변수
 ├─ vite-env.d.ts       # Vite 클라이언트 타입 + ImportMetaEnv 선언
-├─ api/                # 백엔드 API 클라이언트 (fetch 래퍼 등)
+├─ api/
+│  ├─ client.ts        # apiRequest 기본 fetch 래퍼 + ApiError / NetworkError
+│  ├─ auth.ts          # loginWithEmail / signupWithEmail / refreshTokens / logout
+│  └─ authedRequest.ts # Authorization 자동 부착 + 401 자동 refresh 재시도 래퍼
 ├─ pages/              # 라우트 단위 페이지. 컴포넌트명 폴더로 묶음
 │  └─ <Page>/<Page>.tsx, .module.css, .test.tsx
 ├─ components/         # 재사용 가능한 공용 UI 컴포넌트 (e.g. `Logo/`)
-├─ hooks/              # 공용 커스텀 훅 (`useXxx`)
-├─ stores/             # Zustand 스토어 (전역 클라이언트 상태)
-├─ types/              # 프로젝트 공용 타입
-├─ utils/              # 순수 유틸 함수 (`password.ts`, `nickname.ts` 규칙 검증, `errorMessage.ts` 사용자 메시지 변환)
+├─ hooks/              # 공용 커스텀 훅 (`useXxx`) — 현재 비어 있음
+├─ stores/             # Zustand 스토어
+│  └─ authStore.ts     # tokens / user + persist(localStorage, key: dallyrun-auth)
+├─ types/
+│  └─ auth.ts          # AuthTokens / AuthUser / LoginRequest / SignupRequest / AgeBracket / Gender / ApiEnvelope / ApiErrorBody
+├─ utils/
+│  ├─ password.ts      # 비밀번호 5규칙 검증 (evaluatePassword / isPasswordValid)
+│  ├─ nickname.ts      # 닉네임 2~12자 한영숫 검증 (isNicknameValid)
+│  └─ errorMessage.ts  # NetworkError/ApiError/Error → 한글 사용자 메시지 (toUserMessage)
+├─ asset/
+│  └─ dallyrunicon.png # 브랜드 아이콘 (Logo 컴포넌트가 참조)
 └─ test/
-   └─ setup.ts         # @testing-library/jest-dom 매처 등록
+   └─ setup.ts         # @testing-library/jest-dom 매처 + jsdom 폴리필 (URL.createObjectURL, localStorage)
 ```
 
 ### Routes
@@ -102,6 +112,39 @@ src/
 
 새 라우트 추가 시 `src/App.tsx` 의 `<Routes>` 에 등록하고 위 표에 추가한다.
 
+### Current State (구현 여부 요약)
+
+Claude 가 빠르게 현 상태를 파악할 수 있도록 유지 — 기능 추가/제거 시 같이 갱신.
+
+**구현 완료**
+
+- ✅ 이메일/비밀번호 로그인 (`/login`) — `loginWithEmail` 으로 백엔드 연동
+- ✅ 러너 회원가입 (`/signup`) — multipart 2-part (`data` JSON + `image` 파일), 비밀번호 5규칙 실시간 체크리스트, 닉네임/나이/성별 검증
+- ✅ 토큰 **localStorage 영속화** — `authStore` 의 `persist` 미들웨어, key `dallyrun-auth`
+- ✅ `authedRequest` 래퍼 — `Authorization: Bearer <access>` 자동 부착 + **401 시 자동 refresh 재시도 1회** + 실패 시 `authStore.clear()`
+- ✅ 네트워크 실패(`NetworkError`) → **한글 친절 메시지** 로 UI 에 노출 (`toUserMessage`)
+- ✅ GitHub Actions CI (typecheck / lint / format:check / test / build 5개 matrix)
+- ✅ HomePage 에 로그인·회원가입 CTA
+- ✅ 브랜드 테마 (로고 파랑 기반 디자인 토큰)
+
+**미구현 (의도적 스코프 밖)**
+
+- ❌ `ProtectedRoute` — 로그인 필요 페이지 가드 + 미인증 시 `/login` 자동 리다이렉트. 현재는 모든 라우트가 공개.
+- ❌ 로그아웃 버튼 UI — `logout()` 함수는 구현돼 있으나 UI 호출 지점이 없음
+- ❌ `/api/me` 같은 유저 정보 엔드포인트 — 백엔드 미제공이라 `authStore.user` 는 항상 `null`
+- ❌ `authedRequest` 의 실제 프로덕션 호출 지점 — 현재는 유닛 테스트에서만 커버. `logout` 은 일회성이라 의도적으로 `apiRequest` 를 직접 사용.
+- ❌ 글로벌 에러 토스트 / 에러 바운더리
+
+새 기능을 추가하거나 위 미구현 항목 중 하나를 완성하면 이 섹션을 즉시 갱신한다.
+
+### Shared Utilities (`src/utils/`)
+
+| 파일              | 공개 API                                                                            | 역할                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `password.ts`     | `PASSWORD_MIN_LENGTH`, `PASSWORD_MAX_LENGTH`, `evaluatePassword`, `isPasswordValid` | 비밀번호 5규칙(길이/영문/숫자/특수기호/허용문자) 검증                        |
+| `nickname.ts`     | `NICKNAME_MIN_LENGTH`, `NICKNAME_MAX_LENGTH`, `isNicknameValid`                     | 닉네임 2~12자, 한글(가-힣)+영문+숫자만                                       |
+| `errorMessage.ts` | `toUserMessage(err, fallback?)`                                                     | `NetworkError` / `ApiError` / raw `TypeError` / `Error` → 한글 사용자 메시지 |
+
 ### Auth
 
 - 이메일/비밀번호 기반 로그인/가입으로 시작한다 (소셜 로그인 미도입).
@@ -109,6 +152,15 @@ src/
   - 성공: `{ "data": T }` envelope. `src/api/client.ts` 의 `apiRequest<T>` 가 자동으로 `data` 를 언래핑.
   - 에러: `{ "message": "..." }` body. `ApiError.message` 로 매핑되어 UI 에 노출.
   - **네트워크 실패** (fetch 가 reject): `NetworkError` 로 래핑. UI 에선 `src/utils/errorMessage.ts` 의 `toUserMessage` 로 "서버에 연결할 수 없습니다…" 같은 한글 메시지로 일관 변환.
+- **에러 클래스** (둘 다 `src/api/client.ts` export)
+
+| 클래스         | 언제 던져지는가                                                                  | 필드                                                                        |
+| -------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `ApiError`     | 서버가 HTTP 응답은 줬는데 4xx/5xx                                                | `status: number`, `message: string` (서버 `message` 우선, 없으면 기본 문구) |
+| `NetworkError` | fetch 자체가 reject — 서버 다운 / CORS preflight 실패 / 오프라인 / 네트워크 끊김 | `message: string` (원인 문구 포함)                                          |
+
+UI 에선 두 가지 모두 `toUserMessage` 로 일관 변환하되, 로그인 401 같은 페이지 특유 상황만 페이지 안에서 먼저 처리.
+
 - **엔드포인트 계약**
   - `POST /api/auth/login` — JSON `{ email, password }` → `{ accessToken, refreshToken }`. 401 은 이메일 없음/비번 불일치 공통(열거 방지).
   - `POST /api/auth/signup` — **multipart/form-data 파트 2개**:
@@ -120,8 +172,15 @@ src/
   - `DELETE /api/auth/logout` — 인증 필요(`Authorization: Bearer <access>`), 바디 없음, 200 (바디 없음).
 - `src/api/client.ts` 의 `apiRequest<T>` 는 body 가 `FormData` 이면 `Content-Type` 을 설정하지 않고 그대로 전송하여 multipart 를 지원한다.
 - API 함수는 `src/api/auth.ts` 의 `loginWithEmail`, `signupWithEmail`, `refreshTokens`, `logout`.
+  - `logout(accessToken)` 은 서버 호출 실패(401/500 등)에도 `ApiError` 를 **swallow** 한다 — 네트워크 상태와 무관하게 로컬 토큰 정리를 보장하기 위함. 호출자가 반드시 이어서 `useAuthStore.getState().clear()` 를 실행해야 함.
 - 인증 필요한 호출은 `src/api/authedRequest.ts` 의 `authedRequest<T>` 를 사용. Authorization 헤더 자동 부착 + **401 시 자동으로 refresh → 재시도 1회**, refresh 도 실패하면 `authStore.clear()` 호출 (UI 가 리다이렉트 처리).
+  - 현재 프로덕션 코드에 `authedRequest` 를 쓰는 호출 지점은 없음. `logout` 은 일회성이라 의도적으로 `apiRequest` 를 직접 사용. 이후 보호된 엔드포인트가 생기면 `authedRequest` 로 감싸서 호출할 것.
 - **토큰 영속화**: `src/stores/authStore.ts` 의 Zustand 스토어는 `persist` 미들웨어로 **localStorage** 의 `dallyrun-auth` 키에 저장. 새로고침·탭 재진입 후에도 세션 유지.
+  - 저장 구조:
+    ```json
+    { "state": { "tokens": AuthTokens | null, "user": AuthUser | null }, "version": 0 }
+    ```
+  - `partialize` 로 `tokens` / `user` 만 직렬화, setter(`setTokens` 등)는 제외.
 - 비밀번호 제약: **8자 이상 30자 이하** + **영문자(대소문자 무관)** + **숫자** + **ASCII 특수기호** 모두 포함, 그리고 **허용 문자는 ASCII 영문/숫자/특수기호만** (공백·한글·이모지·전각문자·제어문자 등 금지). 검증 로직은 `src/utils/password.ts`. SignupPage 는 다섯 규칙을 체크리스트로 실시간 표시. 서버 정규식과 1:1 대응.
 - 닉네임 제약: **2~12자**, **한글 완성형(가-힣) + 영문자 + 숫자** 만 허용. 공백·특수문자·자모·이모지·전각문자 등 금지. 검증 로직은 `src/utils/nickname.ts`.
 - 회원가입 필수 필드: `email`, `password`, `nickname`, `ageBracket`, `gender`, `profileImage`. 프로필 이미지는 **필수**이며 JPEG/PNG 등 일반 이미지. `AgeBracket = 20 | 30 | 40 | 50 | 60` 리터럴 유니온(60은 "60대 이상").
@@ -188,6 +247,10 @@ src/
 - UI 는 **역할(role) 기반 쿼리** 우선 (`getByRole`, `getByLabelText`).
 - 네트워크 호출은 mocking 또는 MSW 도입 전까지 직접 `apiRequest` 를 모킹한다.
 - 새 기능 PR 은 관련 테스트가 포함되어야 리뷰 대상이 된다.
+- `src/test/setup.ts` 는 jsdom 에 없거나 불안정한 API 를 폴리필해 둠:
+  - `URL.createObjectURL` / `URL.revokeObjectURL` — 프로필 이미지 미리보기(`SignupPage`) 테스트용
+  - `localStorage` 인메모리 fallback — zustand `persist` 미들웨어와의 호환성 확보용
+  - 테스트에서 storage 관련 에러가 나면 이 셋업을 먼저 의심.
 
 ## See also
 
