@@ -49,7 +49,6 @@ describe('LoginPage', () => {
     loginWithEmailMock.mockResolvedValue({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
-      user: { id: 'user-1', email: 'test@example.com', nickname: '테스터' },
     });
 
     const user = userEvent.setup();
@@ -67,8 +66,8 @@ describe('LoginPage', () => {
 
     await vi.waitFor(() => {
       const state = useAuthStore.getState();
-      expect(state.token?.accessToken).toBe('access-token');
-      expect(state.user?.email).toBe('test@example.com');
+      expect(state.tokens?.accessToken).toBe('access-token');
+      expect(state.tokens?.refreshToken).toBe('refresh-token');
     });
   });
 });

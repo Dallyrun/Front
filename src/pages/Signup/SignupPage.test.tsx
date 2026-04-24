@@ -166,7 +166,6 @@ describe('SignupPage', () => {
     signupWithEmailMock.mockResolvedValue({
       accessToken: 'access',
       refreshToken: 'refresh',
-      user: { id: 'u1', email: 'test@example.com', nickname: '러너runner' },
     });
     const user = userEvent.setup();
     renderSignupPage();
@@ -183,14 +182,14 @@ describe('SignupPage', () => {
       email: 'test@example.com',
       password: validPassword,
       nickname: validNickname,
-      ageGroup: 30,
+      ageBracket: 30,
       gender: 'MALE',
     });
     expect(payload?.profileImage).toBeInstanceOf(File);
     expect(payload?.profileImage?.name).toBe('avatar.png');
 
     await vi.waitFor(() => {
-      expect(useAuthStore.getState().token?.accessToken).toBe('access');
+      expect(useAuthStore.getState().tokens?.accessToken).toBe('access');
     });
   });
 });

@@ -6,21 +6,21 @@ import { loginWithEmail } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import Logo from '@/components/Logo/Logo';
 import { useAuthStore } from '@/stores/authStore';
-import type { AuthResponse, LoginRequest } from '@/types/auth';
+import type { AuthTokens, LoginRequest } from '@/types/auth';
 
 import styles from './LoginPage.module.css';
 
 function LoginPage() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setTokens = useAuthStore((state) => state.setTokens);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const mutation = useMutation<AuthResponse, Error, LoginRequest>({
+  const mutation = useMutation<AuthTokens, Error, LoginRequest>({
     mutationFn: loginWithEmail,
-    onSuccess: ({ accessToken, refreshToken, user }) => {
-      setAuth({ accessToken, refreshToken }, user);
+    onSuccess: (tokens) => {
+      setTokens(tokens);
       navigate('/', { replace: true });
     },
   });
@@ -32,7 +32,9 @@ function LoginPage() {
 
   const errorMessage = mutation.error
     ? mutation.error instanceof ApiError
-      ? `로그인에 실패했습니다 (${mutation.error.status})`
+      ? mutation.error.status === 401
+        ? '이메일 또는 비밀번호가 올바르지 않습니다.'
+        : (mutation.error.message ?? `로그인에 실패했습니다 (${mutation.error.status})`)
       : mutation.error.message
     : null;
 
