@@ -87,18 +87,18 @@ src/
 ├─ hooks/              # 공용 커스텀 훅 (`useXxx`)
 ├─ stores/             # Zustand 스토어 (전역 클라이언트 상태)
 ├─ types/              # 프로젝트 공용 타입
-├─ utils/              # 순수 유틸 함수 (e.g. `password.ts` — 비밀번호 규칙 검증)
+├─ utils/              # 순수 유틸 함수 (`password.ts`, `nickname.ts` — 규칙 검증)
 └─ test/
    └─ setup.ts         # @testing-library/jest-dom 매처 등록
 ```
 
 ### Routes
 
-| Path      | Component                 | 비고                                                       |
-| --------- | ------------------------- | ---------------------------------------------------------- |
-| `/`       | `pages/Home/HomePage`     | 초기 랜딩                                                  |
-| `/login`  | `pages/Login/LoginPage`   | 이메일/비밀번호 로그인 폼 + 로고 + 회원가입 링크           |
-| `/signup` | `pages/Signup/SignupPage` | 이메일/비밀번호/비밀번호 확인/프로필 이미지/닉네임 가입 폼 |
+| Path      | Component                 | 비고                                                          |
+| --------- | ------------------------- | ------------------------------------------------------------- |
+| `/`       | `pages/Home/HomePage`     | 초기 랜딩                                                     |
+| `/login`  | `pages/Login/LoginPage`   | 이메일/비밀번호 로그인 폼 + 로고 + 회원가입 링크              |
+| `/signup` | `pages/Signup/SignupPage` | 러너 등록 폼 (이메일/비밀번호/프로필 이미지/닉네임/나이/성별) |
 
 새 라우트 추가 시 `src/App.tsx` 의 `<Routes>` 에 등록하고 위 표에 추가한다.
 
@@ -107,10 +107,12 @@ src/
 - 이메일/비밀번호 기반 로그인/가입으로 시작한다 (소셜 로그인 미도입).
 - API 엔드포인트 계약:
   - `POST /api/auth/login` — JSON: `{ email, password }` → `AuthResponse`
-  - `POST /api/auth/register` — **multipart/form-data** 필드: `email`, `password`, `nickname`, 선택적 파일 `profileImage` → `AuthResponse`
+  - `POST /api/auth/register` — **multipart/form-data** 필드: `email`, `password`, `nickname`, `ageGroup`(문자열 "20"/"30"/"40"/"50"/"60"), `gender`("MALE"/"FEMALE"), 필수 파일 `profileImage` → `AuthResponse`
 - `src/api/client.ts` 의 `apiRequest<T>` 는 body 가 `FormData` 이면 `Content-Type` 을 설정하지 않고 그대로 전송하여 multipart 를 지원한다.
 - API 함수는 `src/api/auth.ts` 의 `loginWithEmail`, `signupWithEmail`. `signupWithEmail` 은 `SignupRequest` 를 내부에서 FormData 로 변환.
 - 비밀번호 제약: **8자 이상 30자 이하** + **영문자(대소문자 무관)** + **숫자** + **ASCII 특수기호** 모두 포함, 그리고 **허용 문자는 ASCII 영문/숫자/특수기호만** (공백·한글·이모지·전각문자·제어문자 등 금지). 검증 로직은 `src/utils/password.ts` 의 `evaluatePassword` / `isPasswordValid` 에 있고 SignupPage 는 다섯 규칙을 체크리스트로 실시간 표시한다. 서버 정규식과 1:1 대응.
+- 닉네임 제약: **2~12자**, **한글 완성형(가-힣) + 영문자 + 숫자** 만 허용. 공백·특수문자·자모·이모지·전각문자 등 금지. 검증 로직은 `src/utils/nickname.ts` 의 `isNicknameValid`.
+- 회원가입 필수 필드: `email`, `password`, `nickname`, `ageGroup`, `gender`, `profileImage`. 프로필 이미지는 **필수**이며 JPEG/PNG 등 일반 이미지. ageGroup 은 `AgeGroup = 20 | 30 | 40 | 50 | 60` 리터럴 유니온으로 타입 안전성 확보.
 - 전역 인증 상태(`token`, `user`)는 `src/stores/authStore.ts` 의 Zustand 스토어에서 관리. 현재는 메모리 기반이며, 영속화 도입 시 본 섹션과 함께 갱신한다.
 - 인증 관련 공용 타입은 `src/types/auth.ts` 에 정의한다.
 - 공용 브랜드 컴포넌트: `src/components/Logo/Logo.tsx` — 아이콘 이미지(`src/asset/dallyrunicon.png`) + 그라데이션 wordmark + tagline. props: `size` `sm|md|lg`, `withIcon`, `withTagline`, `as`.

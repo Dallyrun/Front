@@ -272,3 +272,100 @@
   font-size: 0.875rem;
   color: var(--text-muted);
 }
+
+/* 나이 드롭다운 */
+.select {
+  font: inherit;
+  padding: 0.75rem 2.25rem 0.75rem 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background-color: var(--surface-2);
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent 50%,
+      var(--text-muted) 50%,
+      var(--text-muted) calc(50% + 1.5px),
+      transparent calc(50% + 1.5px)
+    ),
+    linear-gradient(
+      -45deg,
+      transparent calc(50% - 1.5px),
+      var(--text-muted) calc(50% - 1.5px),
+      var(--text-muted) 50%,
+      transparent 50%
+    );
+  background-position:
+    calc(100% - 1rem) 55%,
+    calc(100% - 0.625rem) 55%;
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+  color: var(--text);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.select:focus {
+  border-color: var(--brand-start);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* 성별 세그먼트 */
+.genderGroup {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.genderOption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.genderOption:hover {
+  border-color: var(--brand-start);
+}
+
+.genderOptionSelected {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--accent-ring);
+}
+
+.genderOption:focus-within {
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
