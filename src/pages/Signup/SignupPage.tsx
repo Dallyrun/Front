@@ -6,7 +6,8 @@ import { signupWithEmail } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import Logo from '@/components/Logo/Logo';
 import { useAuthStore } from '@/stores/authStore';
-import type { AuthResponse, SignupRequest } from '@/types/auth';
+import type { AgeGroup, AuthResponse, Gender, SignupRequest } from '@/types/auth';
+import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, isNicknameValid } from '@/utils/nickname';
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -29,6 +30,19 @@ const PASSWORD_RULES: PasswordRule[] = [
   { key: 'onlyAllowedChars', label: '허용 문자만 사용' },
 ];
 
+const AGE_GROUP_OPTIONS: { value: AgeGroup; label: string }[] = [
+  { value: 20, label: '20대' },
+  { value: 30, label: '30대' },
+  { value: 40, label: '40대' },
+  { value: 50, label: '50대' },
+  { value: 60, label: '60대 이상' },
+];
+
+const GENDER_OPTIONS: { value: Gender; label: string }[] = [
+  { value: 'MALE', label: '남자' },
+  { value: 'FEMALE', label: '여자' },
+];
+
 function SignupPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -40,6 +54,8 @@ function SignupPage() {
   const [nickname, setNickname] = useState('');
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | null>(null);
+  const [gender, setGender] = useState<Gender | null>(null);
 
   useEffect(() => {
     if (!profileImage) {
@@ -55,12 +71,19 @@ function SignupPage() {
   const passwordValid = isPasswordValid(password);
   const passwordMismatch = passwordConfirm.length > 0 && password !== passwordConfirm;
 
+  const nicknameValid = isNicknameValid(nickname);
+  const nicknameInteracted = nickname.length > 0;
+  const nicknameError = nicknameInteracted && !nicknameValid;
+
   const isFormValid =
     email.trim() !== '' &&
     passwordValid &&
     passwordConfirm !== '' &&
     !passwordMismatch &&
-    nickname.trim() !== '';
+    profileImage !== null &&
+    nicknameValid &&
+    ageGroup !== null &&
+    gender !== null;
 
   const mutation = useMutation<AuthResponse, Error, SignupRequest>({
     mutationFn: signupWithEmail,
@@ -72,8 +95,15 @@ function SignupPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!isFormValid) return;
-    mutation.mutate({ email, password, nickname, profileImage });
+    if (!isFormValid || profileImage === null || ageGroup === null || gender === null) return;
+    mutation.mutate({
+      email,
+      password,
+      nickname,
+      profileImage,
+      ageGroup,
+      gender,
+    });
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -188,11 +218,9 @@ function SignupPage() {
           )}
         </div>
 
-        {/* 프로필 이미지 */}
+        {/* 프로필 이미지 (필수) */}
         <div className={styles.field}>
-          <span className={styles.label}>
-            프로필 이미지 <span className={styles.optional}>(선택)</span>
-          </span>
+          <span className={styles.label}>프로필 이미지</span>
           <div className={styles.profileRow}>
             <button
               type="button"
@@ -219,7 +247,7 @@ function SignupPage() {
                 aria-label="프로필 이미지 파일"
               />
               <p className={styles.profileHint}>
-                {profileImage ? profileImage.name : '이미지를 선택하면 미리보기가 표시됩니다.'}
+                {profileImage ? profileImage.name : '이미지를 선택해주세요.'}
               </p>
               {profileImage && (
                 <button type="button" className={styles.linkButton} onClick={removeProfileImage}>
@@ -240,12 +268,81 @@ function SignupPage() {
             type="text"
             name="nickname"
             autoComplete="nickname"
-            placeholder="달리런 러너"
+            placeholder="달리런러너"
+            minLength={NICKNAME_MIN_LENGTH}
+            maxLength={NICKNAME_MAX_LENGTH}
             required
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
             className={styles.input}
+            aria-invalid={nicknameError}
+            aria-describedby="signup-nickname-hint"
           />
+          <p id="signup-nickname-hint" className={nicknameError ? styles.hintError : styles.hint}>
+            {`${NICKNAME_MIN_LENGTH}~${NICKNAME_MAX_LENGTH}자, 한글/영문/숫자`}
+          </p>
+        </div>
+
+        {/* 나이 */}
+        <div className={styles.field}>
+          <label htmlFor="signup-age-group" className={styles.label}>
+            나이
+          </label>
+          <select
+            id="signup-age-group"
+            name="ageGroup"
+            required
+            value={ageGroup === null ? '' : String(ageGroup)}
+            onChange={(event) => {
+              const raw = event.target.value;
+              setAgeGroup(raw === '' ? null : (Number(raw) as AgeGroup));
+            }}
+            className={styles.select}
+          >
+            <option value="" disabled>
+              선택하세요
+            </option>
+            {AGE_GROUP_OPTIONS.map((option) => (
+              <option key={option.value} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 성별 */}
+        <div className={styles.field}>
+          <span className={styles.label} id="signup-gender-label">
+            성별
+          </span>
+          <div
+            className={styles.genderGroup}
+            role="radiogroup"
+            aria-labelledby="signup-gender-label"
+          >
+            {GENDER_OPTIONS.map((option) => {
+              const inputId = `signup-gender-${option.value}`;
+              const selected = gender === option.value;
+              return (
+                <label
+                  key={option.value}
+                  htmlFor={inputId}
+                  className={`${styles.genderOption} ${selected ? styles.genderOptionSelected : ''}`}
+                >
+                  <input
+                    id={inputId}
+                    type="radio"
+                    name="gender"
+                    value={option.value}
+                    checked={selected}
+                    onChange={() => setGender(option.value)}
+                    className={styles.visuallyHidden}
+                  />
+                  {option.label}
+                </label>
+              );
+            })}
+          </div>
         </div>
 
         {errorMessage && (
