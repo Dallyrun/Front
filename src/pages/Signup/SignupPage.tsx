@@ -3,10 +3,10 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'r
 import { Link, useNavigate } from 'react-router-dom';
 
 import { signupWithEmail } from '@/api/auth';
-import { ApiError } from '@/api/client';
 import Logo from '@/components/Logo/Logo';
 import { useAuthStore } from '@/stores/authStore';
 import type { AgeBracket, AuthTokens, Gender, SignupRequest } from '@/types/auth';
+import { toUserMessage } from '@/utils/errorMessage';
 import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, isNicknameValid } from '@/utils/nickname';
 import {
   PASSWORD_MAX_LENGTH,
@@ -119,9 +119,7 @@ function SignupPage() {
   };
 
   const errorMessage = mutation.error
-    ? mutation.error instanceof ApiError
-      ? (mutation.error.message ?? `회원가입에 실패했습니다 (${mutation.error.status})`)
-      : mutation.error.message
+    ? toUserMessage(mutation.error, '회원가입에 실패했습니다.')
     : null;
 
   const passwordInteracted = password.length > 0;
