@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { NetworkError } from '@/api/client';
 import { useAuthStore } from '@/stores/authStore';
 
 import LoginPage from './LoginPage';
@@ -68,6 +69,21 @@ describe('LoginPage', () => {
       const state = useAuthStore.getState();
       expect(state.tokens?.accessToken).toBe('access-token');
       expect(state.tokens?.refreshToken).toBe('refresh-token');
+    });
+  });
+
+  it('NetworkError 발생 시 친절한 네트워크 메시지를 노출한다', async () => {
+    loginWithEmailMock.mockRejectedValue(new NetworkError());
+
+    const user = userEvent.setup();
+    renderLoginPage();
+
+    await user.type(screen.getByLabelText(/이메일/), 'test@example.com');
+    await user.type(screen.getByLabelText(/비밀번호/), 'secret123');
+    await user.click(screen.getByRole('button', { name: /로그인하기/ }));
+
+    await vi.waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/서버에 연결할 수 없습니다/);
     });
   });
 });

@@ -87,7 +87,7 @@ src/
 ├─ hooks/              # 공용 커스텀 훅 (`useXxx`)
 ├─ stores/             # Zustand 스토어 (전역 클라이언트 상태)
 ├─ types/              # 프로젝트 공용 타입
-├─ utils/              # 순수 유틸 함수 (`password.ts`, `nickname.ts` — 규칙 검증)
+├─ utils/              # 순수 유틸 함수 (`password.ts`, `nickname.ts` 규칙 검증, `errorMessage.ts` 사용자 메시지 변환)
 └─ test/
    └─ setup.ts         # @testing-library/jest-dom 매처 등록
 ```
@@ -108,6 +108,7 @@ src/
 - **API 응답 규약**
   - 성공: `{ "data": T }` envelope. `src/api/client.ts` 의 `apiRequest<T>` 가 자동으로 `data` 를 언래핑.
   - 에러: `{ "message": "..." }` body. `ApiError.message` 로 매핑되어 UI 에 노출.
+  - **네트워크 실패** (fetch 가 reject): `NetworkError` 로 래핑. UI 에선 `src/utils/errorMessage.ts` 의 `toUserMessage` 로 "서버에 연결할 수 없습니다…" 같은 한글 메시지로 일관 변환.
 - **엔드포인트 계약**
   - `POST /api/auth/login` — JSON `{ email, password }` → `{ accessToken, refreshToken }`. 401 은 이메일 없음/비번 불일치 공통(열거 방지).
   - `POST /api/auth/signup` — **multipart/form-data 파트 2개**:
