@@ -98,6 +98,44 @@
   color: var(--danger);
 }
 
+.ruleList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
+}
+
+.ruleUnmet,
+.ruleMet {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  transition: color 120ms ease;
+}
+
+.ruleUnmet {
+  color: var(--text-subtle);
+}
+
+.ruleMet {
+  color: var(--success);
+}
+
+.ruleMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .hintSuccess {
   margin: 0;
   font-size: 0.75rem;

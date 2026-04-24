@@ -7,11 +7,27 @@ import { ApiError } from '@/api/client';
 import Logo from '@/components/Logo/Logo';
 import { useAuthStore } from '@/stores/authStore';
 import type { AuthResponse, SignupRequest } from '@/types/auth';
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  evaluatePassword,
+  isPasswordValid,
+} from '@/utils/password';
 
 import styles from './SignupPage.module.css';
 
-export const PASSWORD_MIN_LENGTH = 8;
-export const PASSWORD_MAX_LENGTH = 100;
+interface PasswordRule {
+  key: keyof ReturnType<typeof evaluatePassword>;
+  label: string;
+}
+
+const PASSWORD_RULES: PasswordRule[] = [
+  { key: 'lengthOk', label: `${PASSWORD_MIN_LENGTH}~${PASSWORD_MAX_LENGTH}자 길이` },
+  { key: 'hasLetter', label: '영문 포함' },
+  { key: 'hasDigit', label: '숫자 포함' },
+  { key: 'hasSpecial', label: '특수기호 포함' },
+  { key: 'onlyAllowedChars', label: '허용 문자만 사용' },
+];
 
 function SignupPage() {
   const navigate = useNavigate();
@@ -35,16 +51,13 @@ function SignupPage() {
     return () => URL.revokeObjectURL(url);
   }, [profileImage]);
 
-  const passwordTooShort = password.length > 0 && password.length < PASSWORD_MIN_LENGTH;
-  const passwordTooLong = password.length > PASSWORD_MAX_LENGTH;
+  const passwordStatus = evaluatePassword(password);
+  const passwordValid = isPasswordValid(password);
   const passwordMismatch = passwordConfirm.length > 0 && password !== passwordConfirm;
-
-  const passwordLengthValid =
-    password.length >= PASSWORD_MIN_LENGTH && password.length <= PASSWORD_MAX_LENGTH;
 
   const isFormValid =
     email.trim() !== '' &&
-    passwordLengthValid &&
+    passwordValid &&
     passwordConfirm !== '' &&
     !passwordMismatch &&
     nickname.trim() !== '';
@@ -80,6 +93,8 @@ function SignupPage() {
       ? `회원가입에 실패했습니다 (${mutation.error.status})`
       : mutation.error.message
     : null;
+
+  const passwordInteracted = password.length > 0;
 
   return (
     <main className={styles.page}>
@@ -124,19 +139,26 @@ function SignupPage() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className={styles.input}
-            aria-invalid={passwordTooShort || passwordTooLong}
-            aria-describedby="signup-password-hint"
+            aria-invalid={passwordInteracted && !passwordValid}
+            aria-describedby="signup-password-rules"
           />
-          <p
-            id="signup-password-hint"
-            className={passwordTooShort || passwordTooLong ? styles.hintError : styles.hint}
-          >
-            {passwordTooShort
-              ? `비밀번호는 최소 ${PASSWORD_MIN_LENGTH}자 이상이어야 합니다.`
-              : passwordTooLong
-                ? `비밀번호는 최대 ${PASSWORD_MAX_LENGTH}자 이하여야 합니다.`
-                : `${PASSWORD_MIN_LENGTH}자 이상 ${PASSWORD_MAX_LENGTH}자 이하`}
-          </p>
+          <ul id="signup-password-rules" className={styles.ruleList}>
+            {PASSWORD_RULES.map((rule) => {
+              const met = passwordStatus[rule.key];
+              return (
+                <li
+                  key={rule.key}
+                  className={met ? styles.ruleMet : styles.ruleUnmet}
+                  aria-label={`${rule.label} ${met ? '충족' : '미충족'}`}
+                >
+                  <span className={styles.ruleMark} aria-hidden="true">
+                    {met ? '✓' : '·'}
+                  </span>
+                  {rule.label}
+                </li>
+              );
+            })}
+          </ul>
         </div>
 
         {/* 비밀번호 확인 */}
