@@ -105,16 +105,27 @@ src/
 ### Auth
 
 - 이메일/비밀번호 기반 로그인/가입으로 시작한다 (소셜 로그인 미도입).
-- API 엔드포인트 계약:
-  - `POST /api/auth/login` — JSON: `{ email, password }` → `AuthResponse`
-  - `POST /api/auth/register` — **multipart/form-data** 필드: `email`, `password`, `nickname`, `ageGroup`(문자열 "20"/"30"/"40"/"50"/"60"), `gender`("MALE"/"FEMALE"), 필수 파일 `profileImage` → `AuthResponse`
+- **API 응답 규약**
+  - 성공: `{ "data": T }` envelope. `src/api/client.ts` 의 `apiRequest<T>` 가 자동으로 `data` 를 언래핑.
+  - 에러: `{ "message": "..." }` body. `ApiError.message` 로 매핑되어 UI 에 노출.
+- **엔드포인트 계약**
+  - `POST /api/auth/login` — JSON `{ email, password }` → `{ accessToken, refreshToken }`. 401 은 이메일 없음/비번 불일치 공통(열거 방지).
+  - `POST /api/auth/signup` — **multipart/form-data 파트 2개**:
+    - `data` (JSON 파트, Content-Type **application/json**): `{ email, password, nickname, ageBracket, gender }`
+    - `image` (파일 파트, 필수): 프로필 이미지
+    - → `{ accessToken, refreshToken }`
+    - 409: 이메일/닉네임 중복
+  - `POST /api/auth/refresh` — JSON `{ refreshToken }` → 새 `{ accessToken, refreshToken }` 쌍 (기존 refresh 는 무효화, rotation). 401 이면 재로그인 필요.
+  - `DELETE /api/auth/logout` — 인증 필요(`Authorization: Bearer <access>`), 바디 없음, 200 (바디 없음).
 - `src/api/client.ts` 의 `apiRequest<T>` 는 body 가 `FormData` 이면 `Content-Type` 을 설정하지 않고 그대로 전송하여 multipart 를 지원한다.
-- API 함수는 `src/api/auth.ts` 의 `loginWithEmail`, `signupWithEmail`. `signupWithEmail` 은 `SignupRequest` 를 내부에서 FormData 로 변환.
-- 비밀번호 제약: **8자 이상 30자 이하** + **영문자(대소문자 무관)** + **숫자** + **ASCII 특수기호** 모두 포함, 그리고 **허용 문자는 ASCII 영문/숫자/특수기호만** (공백·한글·이모지·전각문자·제어문자 등 금지). 검증 로직은 `src/utils/password.ts` 의 `evaluatePassword` / `isPasswordValid` 에 있고 SignupPage 는 다섯 규칙을 체크리스트로 실시간 표시한다. 서버 정규식과 1:1 대응.
-- 닉네임 제약: **2~12자**, **한글 완성형(가-힣) + 영문자 + 숫자** 만 허용. 공백·특수문자·자모·이모지·전각문자 등 금지. 검증 로직은 `src/utils/nickname.ts` 의 `isNicknameValid`.
-- 회원가입 필수 필드: `email`, `password`, `nickname`, `ageGroup`, `gender`, `profileImage`. 프로필 이미지는 **필수**이며 JPEG/PNG 등 일반 이미지. ageGroup 은 `AgeGroup = 20 | 30 | 40 | 50 | 60` 리터럴 유니온으로 타입 안전성 확보.
-- 전역 인증 상태(`token`, `user`)는 `src/stores/authStore.ts` 의 Zustand 스토어에서 관리. 현재는 메모리 기반이며, 영속화 도입 시 본 섹션과 함께 갱신한다.
-- 인증 관련 공용 타입은 `src/types/auth.ts` 에 정의한다.
+- API 함수는 `src/api/auth.ts` 의 `loginWithEmail`, `signupWithEmail`, `refreshTokens`, `logout`.
+- 인증 필요한 호출은 `src/api/authedRequest.ts` 의 `authedRequest<T>` 를 사용. Authorization 헤더 자동 부착 + **401 시 자동으로 refresh → 재시도 1회**, refresh 도 실패하면 `authStore.clear()` 호출 (UI 가 리다이렉트 처리).
+- **토큰 영속화**: `src/stores/authStore.ts` 의 Zustand 스토어는 `persist` 미들웨어로 **localStorage** 의 `dallyrun-auth` 키에 저장. 새로고침·탭 재진입 후에도 세션 유지.
+- 비밀번호 제약: **8자 이상 30자 이하** + **영문자(대소문자 무관)** + **숫자** + **ASCII 특수기호** 모두 포함, 그리고 **허용 문자는 ASCII 영문/숫자/특수기호만** (공백·한글·이모지·전각문자·제어문자 등 금지). 검증 로직은 `src/utils/password.ts`. SignupPage 는 다섯 규칙을 체크리스트로 실시간 표시. 서버 정규식과 1:1 대응.
+- 닉네임 제약: **2~12자**, **한글 완성형(가-힣) + 영문자 + 숫자** 만 허용. 공백·특수문자·자모·이모지·전각문자 등 금지. 검증 로직은 `src/utils/nickname.ts`.
+- 회원가입 필수 필드: `email`, `password`, `nickname`, `ageBracket`, `gender`, `profileImage`. 프로필 이미지는 **필수**이며 JPEG/PNG 등 일반 이미지. `AgeBracket = 20 | 30 | 40 | 50 | 60` 리터럴 유니온(60은 "60대 이상").
+- 전역 인증 상태: `tokens: AuthTokens | null` + `user: AuthUser | null`. 현재 백엔드는 로그인/가입 응답에 유저 정보를 포함하지 않아 `user` 는 항상 `null` (향후 `/api/me` 같은 엔드포인트가 생기면 채움).
+- 인증 관련 공용 타입은 `src/types/auth.ts` 에 정의.
 - 공용 브랜드 컴포넌트: `src/components/Logo/Logo.tsx` — 아이콘 이미지(`src/asset/dallyrunicon.png`) + 그라데이션 wordmark + tagline. props: `size` `sm|md|lg`, `withIcon`, `withTagline`, `as`.
 
 ### Path Alias

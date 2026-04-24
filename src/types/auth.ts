@@ -1,4 +1,4 @@
-export interface AuthToken {
+export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
@@ -15,21 +15,24 @@ export interface LoginRequest {
   password: string;
 }
 
-export type AgeGroup = 20 | 30 | 40 | 50 | 60;
+export type AgeBracket = 20 | 30 | 40 | 50 | 60;
 export type Gender = 'MALE' | 'FEMALE';
 
 export interface SignupRequest {
   email: string;
   password: string;
   nickname: string;
-  ageGroup: AgeGroup;
+  ageBracket: AgeBracket;
   gender: Gender;
-  /** 필수 — 반드시 파일 선택 후 제출해야 함. */
   profileImage: File;
 }
 
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: AuthUser;
+/** 서버 공통 성공 응답 래퍼: `{ "data": T }` */
+export interface ApiEnvelope<T> {
+  data: T;
+}
+
+/** 서버 공통 에러 바디: `{ "message": "..." }` */
+export interface ApiErrorBody {
+  message?: string;
 }

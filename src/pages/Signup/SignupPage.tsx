@@ -6,7 +6,7 @@ import { signupWithEmail } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import Logo from '@/components/Logo/Logo';
 import { useAuthStore } from '@/stores/authStore';
-import type { AgeGroup, AuthResponse, Gender, SignupRequest } from '@/types/auth';
+import type { AgeBracket, AuthTokens, Gender, SignupRequest } from '@/types/auth';
 import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, isNicknameValid } from '@/utils/nickname';
 import {
   PASSWORD_MAX_LENGTH,
@@ -30,7 +30,7 @@ const PASSWORD_RULES: PasswordRule[] = [
   { key: 'onlyAllowedChars', label: '허용 문자만 사용' },
 ];
 
-const AGE_GROUP_OPTIONS: { value: AgeGroup; label: string }[] = [
+const AGE_BRACKET_OPTIONS: { value: AgeBracket; label: string }[] = [
   { value: 20, label: '20대' },
   { value: 30, label: '30대' },
   { value: 40, label: '40대' },
@@ -45,7 +45,7 @@ const GENDER_OPTIONS: { value: Gender; label: string }[] = [
 
 function SignupPage() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setTokens = useAuthStore((state) => state.setTokens);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [email, setEmail] = useState('');
@@ -54,7 +54,7 @@ function SignupPage() {
   const [nickname, setNickname] = useState('');
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [ageGroup, setAgeGroup] = useState<AgeGroup | null>(null);
+  const [ageBracket, setAgeBracket] = useState<AgeBracket | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);
 
   useEffect(() => {
@@ -82,26 +82,26 @@ function SignupPage() {
     !passwordMismatch &&
     profileImage !== null &&
     nicknameValid &&
-    ageGroup !== null &&
+    ageBracket !== null &&
     gender !== null;
 
-  const mutation = useMutation<AuthResponse, Error, SignupRequest>({
+  const mutation = useMutation<AuthTokens, Error, SignupRequest>({
     mutationFn: signupWithEmail,
-    onSuccess: ({ accessToken, refreshToken, user }) => {
-      setAuth({ accessToken, refreshToken }, user);
+    onSuccess: (tokens) => {
+      setTokens(tokens);
       navigate('/', { replace: true });
     },
   });
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!isFormValid || profileImage === null || ageGroup === null || gender === null) return;
+    if (!isFormValid || profileImage === null || ageBracket === null || gender === null) return;
     mutation.mutate({
       email,
       password,
       nickname,
       profileImage,
-      ageGroup,
+      ageBracket,
       gender,
     });
   };
@@ -120,7 +120,7 @@ function SignupPage() {
 
   const errorMessage = mutation.error
     ? mutation.error instanceof ApiError
-      ? `회원가입에 실패했습니다 (${mutation.error.status})`
+      ? (mutation.error.message ?? `회원가입에 실패했습니다 (${mutation.error.status})`)
       : mutation.error.message
     : null;
 
@@ -285,24 +285,24 @@ function SignupPage() {
 
         {/* 나이 */}
         <div className={styles.field}>
-          <label htmlFor="signup-age-group" className={styles.label}>
+          <label htmlFor="signup-age-bracket" className={styles.label}>
             나이
           </label>
           <select
-            id="signup-age-group"
-            name="ageGroup"
+            id="signup-age-bracket"
+            name="ageBracket"
             required
-            value={ageGroup === null ? '' : String(ageGroup)}
+            value={ageBracket === null ? '' : String(ageBracket)}
             onChange={(event) => {
               const raw = event.target.value;
-              setAgeGroup(raw === '' ? null : (Number(raw) as AgeGroup));
+              setAgeBracket(raw === '' ? null : (Number(raw) as AgeBracket));
             }}
             className={styles.select}
           >
             <option value="" disabled>
               선택하세요
             </option>
-            {AGE_GROUP_OPTIONS.map((option) => (
+            {AGE_BRACKET_OPTIONS.map((option) => (
               <option key={option.value} value={String(option.value)}>
                 {option.label}
               </option>
