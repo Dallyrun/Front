@@ -50,6 +50,10 @@ npm run test:watch          # Vitest watch 모드
   - 새 공용 컴포넌트·훅·스토어 추가 → Architecture 섹션의 디렉터리 설명 업데이트
   - 새 라이브러리 도입 → `package.json` 과 CLAUDE.md (기술 스택 표) 반영
   - 환경 변수 추가 → `src/vite-env.d.ts` 의 `ImportMetaEnv` 타입과 `.env.example`(있을 경우) 함께 업데이트
+- **트러블슈팅 / 에러 개선 / 성능 개선 / 트레이드오프 결정** 은 저장소 루트의 [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) **맨 위에** 누적 기록한다.
+  - `.claude/settings.json` 의 **Stop 훅** 이 매 턴 종료 시 서브에이전트(`claude` CLI 헤드리스) 를 띄워 변경분을 검토하고 자동으로 항목을 추가하므로 보통 수동 조작은 불필요.
+  - 자동 기록이 누락된 듯 보이거나 카테고리·내용이 부정확하면 다음 턴에 명시적으로 보강.
+  - 형식: `## YYYY-MM-DD — 제목 [Troubleshooting | Tradeoff | Performance]` + 상황 / 현상·결정 / 해결·근거 / 참조 PR.
 
 ## Git Convention
 

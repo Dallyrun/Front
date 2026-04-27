@@ -30,5 +30,20 @@
       "Write(.env.local)",
       "Write(.env.*.local)"
     ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && claude --print --max-turns 6 'TROUBLESHOOTING.md auto-log: 최근 변경분(git status, git diff main...HEAD, 마지막 커밋 메시지, 변경된 파일)을 살펴보고 이번 턴이 [Troubleshooting / Tradeoff / Performance] 중 하나에 해당하면 TROUBLESHOOTING.md 맨 위에 한 항목을 prepend 하라. 형식은 파일 헤더에 있는 그대로 (## YYYY-MM-DD — 제목 [카테고리], 상황/현상·결정/해결·근거/참조). 해당 없으면 \"skip — 사유\" 한 줄만 출력하고 종료. TROUBLESHOOTING.md 외 다른 파일은 절대 수정 금지. git commit·push 금지.' 2>&1 | tail -5",
+            "async": true,
+            "timeout": 300
+          }
+        ]
+      }
+    ]
   }
 }
