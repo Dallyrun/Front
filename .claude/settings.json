@@ -34,13 +34,12 @@
   "hooks": {
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && claude --print --max-turns 6 'TROUBLESHOOTING.md auto-log: 최근 변경분(git status, git diff main...HEAD, 마지막 커밋 메시지, 변경된 파일)을 살펴보고 이번 턴이 [Troubleshooting / Tradeoff / Performance] 중 하나에 해당하면 TROUBLESHOOTING.md 맨 위에 한 항목을 prepend 하라. 형식은 파일 헤더에 있는 그대로 (## YYYY-MM-DD — 제목 [카테고리], 상황/현상·결정/해결·근거/참조). 해당 없으면 \"skip — 사유\" 한 줄만 출력하고 종료. TROUBLESHOOTING.md 외 다른 파일은 절대 수정 금지. git commit·push 금지.' 2>&1 | tail -5",
-            "async": true,
-            "timeout": 300
+            "type": "agent",
+            "prompt": "방금 종료된 Claude 세션의 변경분을 검토해 트러블슈팅(TROUBLE) / 의식적 트레이드오프(TRADEOFF) / 성능 개선(PERF) 사례가 있었으면 저장소 루트의 TROUBLESHOOTING.md 맨 위에 새 항목을 추가하라.\n\n절차·형식·판단 기준은 .claude/agents/troubleshooting-recorder.md 의 가이드를 따른다. 보수적으로 — 단순 코드 작성·문서 정리·CI 통과·lint 정리 같은 잡무는 기록 X. 동일 사례 중복 기록 X. 애매하면 기록 X.\n\nHook input: $ARGUMENTS\n\n출력은 한 줄: 기록했으면 추가한 제목, 안 했으면 \"기록할 사례 없음\".",
+            "timeout": 120,
+            "statusMessage": "트러블슈팅 검토"
           }
         ]
       }
