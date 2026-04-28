@@ -43,6 +43,9 @@ npm run test:watch          # Vitest watch 모드
 - 작업 시작 시 반드시 **플랜 모드**로 계획을 세운 뒤 승인받고 구현한다.
 - 작업 시 **브랜치를 생성**하여 작업하고, 완료 후 **PR을 생성**한다.
   - 브랜치명: `feat/<feature-name>`, `fix/<bug-name>`, `refactor/<scope>` 등
+- PR 이 올라왔을 때 Codex 의 기본 역할은 **직접 코드 리뷰어**다.
+  - 별도 CI, hook, 서브에이전트에 위임하지 않고 Codex 가 직접 `main...HEAD` diff 와 PR 본문을 읽어 리뷰한다.
+  - 리뷰는 버그/회귀 위험/테스트 누락을 먼저 찾고, 발견 사항은 심각도 순으로 정확한 파일·라인과 함께 제시한다.
 - 기능 구현 시 반드시 해당 기능의 **테스트 코드**도 함께 작성한다.
   - 테스트는 Vitest + React Testing Library 사용, 기능 파일과 동일 경로에 `*.test.ts(x)` 로 배치한다.
 - 기능 작업 완료 시 관련 **문서(AGENTS.md)도 함께 업데이트**한다:
@@ -50,8 +53,8 @@ npm run test:watch          # Vitest watch 모드
   - 새 공용 컴포넌트·훅·스토어 추가 → Architecture 섹션의 디렉터리 설명 업데이트
   - 새 라이브러리 도입 → `package.json` 과 AGENTS.md (기술 스택 표) 반영
   - 환경 변수 추가 → `src/vite-env.d.ts` 의 `ImportMetaEnv` 타입과 `.env.example`(있을 경우) 함께 업데이트
-- **트러블슈팅 / 에러 개선 / 성능 개선 / 트레이드오프 결정** 은 [`.Codex/TROUBLESHOOTING.md`](./.Codex/TROUBLESHOOTING.md) **맨 위에** 누적 기록한다.
-  - `.Codex/settings.json` 의 **Stop `agent` 훅** 이 매 턴 종료 시 자동 발동. 절차·형식·판단 기준은 [`.Codex/agents/troubleshooting-recorder.md`](./.Codex/agents/troubleshooting-recorder.md) 가 단일 소스.
+- **트러블슈팅 / 에러 개선 / 성능 개선 / 트레이드오프 결정** 은 [`.claude/TROUBLESHOOTING.md`](./.claude/TROUBLESHOOTING.md) **맨 위에** 누적 기록한다.
+  - `.claude/settings.json` 의 **Stop `agent` 훅** 이 매 턴 종료 시 자동 발동. 절차·형식·판단 기준은 [`.claude/agents/troubleshooting-recorder.md`](./.claude/agents/troubleshooting-recorder.md) 가 단일 소스.
   - 보수적으로 동작 — 단순 코드 작성·문서 정리·CI 정리 같은 잡무는 기록하지 않음.
   - 자동 기록이 누락된 듯 보이거나 카테고리·내용이 부정확하면 다음 턴에 명시적으로 보강.
 
@@ -258,12 +261,11 @@ UI 에선 두 가지 모두 `toUserMessage` 로 일관 변환하되, 로그인 4
 
 ## See also
 
-저장소 루트의 `.Codex/` 에 프로젝트 전용 설정이 있다.
+저장소 루트의 `.agents/` 와 `.claude/` 에 프로젝트 전용 자동화 설정이 있다.
 
-- [`.Codex/settings.json`](./.Codex/settings.json) — Codex permissions (npm / git / gh 허용, `.env*` 읽기·쓰기 차단)
-- [`.Codex/commands/`](./.Codex/commands) — 슬래시 커맨드
-  - [`/dev`](./.Codex/commands/dev.md) · [`/check`](./.Codex/commands/check.md) · [`/test`](./.Codex/commands/test.md) · [`/review-pr`](./.Codex/commands/review-pr.md) · [`/fix-issue`](./.Codex/commands/fix-issue.md)
-- [`.Codex/skills/`](./.Codex/skills) — 프로젝트 전용 스킬
-  - [`create-pr/`](./.Codex/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
+- [`.agents/skills/create-pr/`](./.agents/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
+- [`.claude/settings.json`](./.claude/settings.json) — Claude permissions / Stop hook 설정 (`.env*` 읽기·쓰기 차단)
+- [`.claude/commands/`](./.claude/commands) — 기존 Claude 슬래시 커맨드
+  - [`/dev`](./.claude/commands/dev.md) · [`/check`](./.claude/commands/check.md) · [`/test`](./.claude/commands/test.md) · [`/review-pr`](./.claude/commands/review-pr.md) · [`/fix-issue`](./.claude/commands/fix-issue.md)
 
 > 프로젝트 규칙(React/테스트/스타일/커밋)은 본 `AGENTS.md` 가 단일 소스(SSOT)다. Codex 가 자동으로 읽는 파일도 `AGENTS.md` 뿐이므로 룰 파일을 별도 디렉터리로 분리하지 않는다.

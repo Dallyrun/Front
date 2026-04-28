@@ -23,7 +23,7 @@ Dallyrun Front 저장소에서 PR 생성 플로우를 표준화한다.
 
 2. **커밋 누락 확인**
    - 스테이지/미커밋 변경이 있으면 사용자에게 알리고 **진행 중단**.
-   - main 브랜치에 있으면 경고 후 중단 (`.Codex/rules/conventional-commits.md` 참고).
+   - main 브랜치에 있으면 경고 후 중단.
 
 3. **푸시**
    - 원격 추적이 없으면 `git push -u origin <branch>`
