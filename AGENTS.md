@@ -43,6 +43,9 @@ npm run test:watch          # Vitest watch 모드
 - 작업 시작 시 반드시 **플랜 모드**로 계획을 세운 뒤 승인받고 구현한다.
 - 작업 시 **브랜치를 생성**하여 작업하고, 완료 후 **PR을 생성**한다.
   - 브랜치명: `feat/<feature-name>`, `fix/<bug-name>`, `refactor/<scope>` 등
+- PR 생성 직후에는 CI 와 별개로 `.agents/agents/pr-reviewer.md` 지침을 따르는 **리뷰어 서브에이전트**를 호출한다.
+  - 리뷰어는 `main...HEAD` diff 와 PR 본문을 기준으로 버그/회귀/테스트 누락을 찾고, 직접 수정·커밋·푸시는 하지 않는다.
+  - 수동 리뷰가 필요하면 `.agents/commands/review-pr.md` 의 `/review-pr` 절차를 사용한다.
 - 기능 구현 시 반드시 해당 기능의 **테스트 코드**도 함께 작성한다.
   - 테스트는 Vitest + React Testing Library 사용, 기능 파일과 동일 경로에 `*.test.ts(x)` 로 배치한다.
 - 기능 작업 완료 시 관련 **문서(AGENTS.md)도 함께 업데이트**한다:
@@ -258,12 +261,13 @@ UI 에선 두 가지 모두 `toUserMessage` 로 일관 변환하되, 로그인 4
 
 ## See also
 
-저장소 루트의 `.Codex/` 에 프로젝트 전용 설정이 있다.
+저장소 루트의 `.agents/` 와 `.claude/` 에 프로젝트 전용 자동화 설정이 있다.
 
-- [`.Codex/settings.json`](./.Codex/settings.json) — Codex permissions (npm / git / gh 허용, `.env*` 읽기·쓰기 차단)
-- [`.Codex/commands/`](./.Codex/commands) — 슬래시 커맨드
-  - [`/dev`](./.Codex/commands/dev.md) · [`/check`](./.Codex/commands/check.md) · [`/test`](./.Codex/commands/test.md) · [`/review-pr`](./.Codex/commands/review-pr.md) · [`/fix-issue`](./.Codex/commands/fix-issue.md)
-- [`.Codex/skills/`](./.Codex/skills) — 프로젝트 전용 스킬
-  - [`create-pr/`](./.Codex/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
+- [`.agents/commands/review-pr.md`](./.agents/commands/review-pr.md) — 현재 브랜치/PR 변경분 리뷰 절차
+- [`.agents/agents/pr-reviewer.md`](./.agents/agents/pr-reviewer.md) — PR 생성 직후 호출하는 리뷰어 서브에이전트 지침
+- [`.agents/skills/create-pr/`](./.agents/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
+- [`.claude/settings.json`](./.claude/settings.json) — Claude permissions / Stop hook 설정 (`.env*` 읽기·쓰기 차단)
+- [`.claude/commands/`](./.claude/commands) — 기존 Claude 슬래시 커맨드
+  - [`/dev`](./.claude/commands/dev.md) · [`/check`](./.claude/commands/check.md) · [`/test`](./.claude/commands/test.md) · [`/review-pr`](./.claude/commands/review-pr.md) · [`/fix-issue`](./.claude/commands/fix-issue.md)
 
 > 프로젝트 규칙(React/테스트/스타일/커밋)은 본 `AGENTS.md` 가 단일 소스(SSOT)다. Codex 가 자동으로 읽는 파일도 `AGENTS.md` 뿐이므로 룰 파일을 별도 디렉터리로 분리하지 않는다.

@@ -57,11 +57,19 @@ Dallyrun Front 저장소에서 PR 생성 플로우를 표준화한다.
    - `gh pr create --title "<title>" --body "$(cat <<'EOF' ... EOF)"` 패턴으로 HEREDOC 사용
    - 생성 후 반환된 URL 을 사용자에게 표시
 
+6. **PR 리뷰어 서브에이전트 호출**
+   - PR 생성이 성공하면 `.agents/agents/pr-reviewer.md` 지침을 따르는 리뷰어 서브에이전트를 호출한다.
+   - 입력에는 PR URL, 현재 브랜치명, `main...HEAD` 변경 범위를 포함한다.
+   - 리뷰어는 코드 수정/커밋/푸시 없이 findings 만 반환한다.
+   - findings 가 있으면 PR URL 과 함께 사용자에게 요약하고, 없으면 "차단 이슈 없음"을 명확히 알린다.
+   - 이 단계는 CI 체크가 아니며 PR 을 차단하지 않는다. PR 생성 직후의 보조 리뷰로만 사용한다.
+
 ## 금지
 
 - 제목/본문에 Codex/AI 언급(`Co-Authored-By` 포함) 금지.
 - main 에 직접 푸시 금지.
 - 민감값(토큰/시크릿/OAuth 크리덴셜) 포함 금지.
+- PR 리뷰어 서브에이전트는 직접 수정/커밋/푸시 금지.
 
 ## 실패 처리
 
