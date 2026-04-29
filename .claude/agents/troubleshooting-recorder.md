@@ -1,6 +1,6 @@
 ---
 name: troubleshooting-recorder
-description: Stop 훅이 호출하는 작업 일지 자동 기록 에이전트. 방금 종료된 Claude 세션의 변경분을 검토해 트러블슈팅·트레이드오프·성능 개선 사례면 .claude/TROUBLESHOOTING.md 에 항목을 추가한다.
+description: Stop 훅이 호출하는 작업 일지 자동 기록 에이전트. 방금 종료된 Claude 세션의 변경분을 검토해 트러블슈팅·트레이드오프·성능 개선·하네스 개선 사례면 .agents/FEEDBACK.md 에 항목을 추가한다.
 ---
 
 # Troubleshooting Recorder
@@ -9,7 +9,7 @@ description: Stop 훅이 호출하는 작업 일지 자동 기록 에이전트. 
 
 ## 목적
 
-`.claude/TROUBLESHOOTING.md` 를 작업 일지로 누적 관리. 매 턴이 끝날 때 자동으로 호출되며, **기록할 가치가 있는 사례에만** 항목을 추가한다.
+`.agents/FEEDBACK.md` 를 작업 일지로 누적 관리. 매 턴이 끝날 때 자동으로 호출되며, **기록할 가치가 있는 사례에만** 항목을 추가한다.
 
 ## 절차
 
@@ -23,9 +23,10 @@ description: Stop 훅이 호출하는 작업 일지 자동 기록 에이전트. 
    - **TROUBLE (Troubleshooting)**: 에러를 잡거나 디버깅을 통해 해결한 사례. 단순 컴파일 에러 정리는 제외.
    - **TRADEOFF (Tradeoff)**: 둘 이상의 합리적 선택지 중 의식적으로 하나를 고른 설계 결정.
    - **PERF (Performance)**: 측정 가능한 속도/번들/렌더링/네트워크 등의 개선.
+   - **HARNESS (Harness)**: 같은 실수를 막기 위해 검증 게이트, 테스트, lint, 스크립트, PR 체크리스트, 에이전트 지침을 강화한 사례.
 
 3. **기록 결정**
-   - 해당하면 `.claude/TROUBLESHOOTING.md` **맨 위에** (헤더 + 안내 다음 줄) 새 항목 prepend.
+   - 해당하면 `.agents/FEEDBACK.md` **맨 위에** (헤더 + 안내 다음 줄) 새 항목 prepend.
    - 해당 없으면 한 줄로 `"기록할 사례 없음 — 사유"` 출력 후 종료.
 
 4. **출력 한 줄**: 추가했으면 추가한 제목, 안 했으면 `"기록할 사례 없음 — 사유"`.
@@ -44,23 +45,24 @@ description: Stop 훅이 호출하는 작업 일지 자동 기록 에이전트. 
 ## 형식
 
 ```markdown
-## YYYY-MM-DD — 한 줄 제목 [Troubleshooting | Tradeoff | Performance]
+## YYYY-MM-DD - 한 줄 제목
 
-- **상황**: 어떤 작업 중이었나
-- **현상 / 결정**: 무엇이 문제였나 / 무엇을 정했나
-- **해결 / 근거**: 어떻게 풀었나 / 왜 그 선택인가
-- **참조**: PR · 파일 · 커밋
+- **Trigger**: 어떤 작업 / 리뷰 / 실패에서 나왔나
+- **Symptom**: 무엇이 문제였나 / 어떤 위험을 봤나
+- **Root cause**: 원인 또는 결정 배경
+- **Fix**: 어떻게 풀었나
+- **Harness update**: 재발 방지를 위해 추가·수정한 게이트 / 테스트 / 문서 / 스크립트
 ```
 
 날짜는 한국 시각(KST) 기준 `date '+%Y-%m-%d'` 사용.
 
 ## 안전장치
 
-- **`.claude/TROUBLESHOOTING.md` 외 다른 파일은 절대 수정 금지**
+- **`.agents/FEEDBACK.md` 외 다른 파일은 절대 수정 금지**
 - **git commit / push 금지** — 사용자가 수동으로 커밋
 - 출력은 한 줄 요약만 (긴 로그 X)
 
 ## 위치
 
-- 작업 일지: `Front/.claude/TROUBLESHOOTING.md`
+- 작업 일지: `Front/.agents/FEEDBACK.md`
 - 본 가이드: `Front/.claude/agents/troubleshooting-recorder.md` (자기 참조)

@@ -19,6 +19,8 @@ npm run format:check        # Prettier 검사 (CI용)
 npm run typecheck           # tsc --noEmit
 npm run test                # Vitest 1회 실행
 npm run test:watch          # Vitest watch 모드
+npm run verify              # typecheck + lint + format:check + test + build 전체 게이트
+npm run verify:fast         # typecheck + lint + test 빠른 게이트
 ```
 
 ## CI (GitHub Actions)
@@ -53,10 +55,42 @@ npm run test:watch          # Vitest watch 모드
   - 새 공용 컴포넌트·훅·스토어 추가 → Architecture 섹션의 디렉터리 설명 업데이트
   - 새 라이브러리 도입 → `package.json` 과 AGENTS.md (기술 스택 표) 반영
   - 환경 변수 추가 → `src/vite-env.d.ts` 의 `ImportMetaEnv` 타입과 `.env.example`(있을 경우) 함께 업데이트
-- **트러블슈팅 / 에러 개선 / 성능 개선 / 트레이드오프 결정** 은 [`.claude/TROUBLESHOOTING.md`](./.claude/TROUBLESHOOTING.md) **맨 위에** 누적 기록한다.
-  - `.claude/settings.json` 의 **Stop `agent` 훅** 이 매 턴 종료 시 자동 발동. 절차·형식·판단 기준은 [`.claude/agents/troubleshooting-recorder.md`](./.claude/agents/troubleshooting-recorder.md) 가 단일 소스.
+- **트러블슈팅 / 에러 개선 / 성능 개선 / 트레이드오프 결정** 은 [`.agents/FEEDBACK.md`](./.agents/FEEDBACK.md) 에 누적 기록한다.
   - 보수적으로 동작 — 단순 코드 작성·문서 정리·CI 정리 같은 잡무는 기록하지 않음.
-  - 자동 기록이 누락된 듯 보이거나 카테고리·내용이 부정확하면 다음 턴에 명시적으로 보강.
+  - 같은 교훈이 2회 이상 반복되면 테스트, lint, 스크립트, PR 체크리스트, AGENTS 규칙 중 하나로 승격한다.
+
+## Agent Harness
+
+### Shared Instructions
+
+- `AGENTS.md` 가 프로젝트 규칙의 단일 소스(SSOT)다.
+- Codex 는 `AGENTS.md` 를 직접 읽는다.
+- Claude Code 는 루트 `CLAUDE.md` 에서 `@AGENTS.md` 를 import 하여 같은 규칙을 읽는다.
+- `CLAUDE.md` 에는 Claude 전용 보충만 둔다. 프로젝트 공통 규칙은 `AGENTS.md` 또는 `.agents/` 에 둔다.
+
+### Verification Gates
+
+작업자는 변경 범위에 맞는 최소 게이트를 실행하고, PR 본문에 실행 결과를 남긴다. 범위가 애매하면 더 넓은 게이트를 선택한다.
+
+| 변경 범위                  | 최소 게이트                                             |
+| -------------------------- | ------------------------------------------------------- |
+| 문서만 변경                | `npm run format:check`                                  |
+| 유틸 / 타입 / 스토어 변경  | `npm run verify:fast`                                   |
+| API 클라이언트 / 인증 변경 | `npm run verify:fast` + 관련 인증/에러 경로 테스트 확인 |
+| 페이지 / 라우트 / UI 변경  | `npm run verify:fast` + 필요 시 브라우저 수동 확인      |
+| 빌드 / CI / 의존성 변경    | `npm run verify`                                        |
+| 릴리스 또는 PR 최종 확인   | 가능하면 `npm run verify`                               |
+
+- 실패한 게이트가 있으면 원인을 수정하고 같은 게이트를 다시 실행한다.
+- 시간이 오래 걸리거나 환경 문제로 실행하지 못한 게이트는 PR 본문과 최종 응답에 이유를 명시한다.
+- 검증 결과가 새로운 프로젝트 교훈을 만들면 `.agents/FEEDBACK.md` 에 기록한다.
+
+### Feedback Loop
+
+- `.agents/FEEDBACK.md` 는 실패, 리뷰 지적, 디버깅, 성능 개선, 트레이드오프에서 얻은 재사용 가능한 교훈을 기록한다.
+- 항목은 `Trigger / Symptom / Root cause / Fix / Harness update` 형식을 따른다.
+- 단순 작업 기록이나 통과한 체크 결과만으로는 항목을 추가하지 않는다.
+- 반복되는 항목은 더 강한 검증 게이트로 승격한다.
 
 ## Git Convention
 
@@ -78,6 +112,7 @@ npm run test:watch          # Vitest watch 모드
 | 스타일          | Plain CSS + CSS Modules (`*.module.css`)                    |
 | 린트 / 포맷     | ESLint 9 (flat config) + Prettier 3                         |
 | 테스트          | Vitest + @testing-library/react + jsdom                     |
+| 에이전트 하네스 | AGENTS.md + CLAUDE.md import + `.agents/FEEDBACK.md`        |
 
 ### Directory Layout
 
@@ -261,11 +296,14 @@ UI 에선 두 가지 모두 `toUserMessage` 로 일관 변환하되, 로그인 4
 
 ## See also
 
-저장소 루트의 `.agents/` 와 `.claude/` 에 프로젝트 전용 자동화 설정이 있다.
+저장소 루트의 `.agents/`, `.claude/`, `.github/`, `CLAUDE.md` 에 프로젝트 전용 자동화 설정이 있다.
 
 - [`.agents/skills/create-pr/`](./.agents/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
-- [`.claude/settings.json`](./.claude/settings.json) — Claude permissions / Stop hook 설정 (`.env*` 읽기·쓰기 차단)
+- [`.agents/FEEDBACK.md`](./.agents/FEEDBACK.md) — 검증 실패 / 리뷰 지적 / 트레이드오프 교훈을 누적하는 피드백 루프
+- [`.claude/settings.json`](./.claude/settings.json) — Claude permissions / Stop hook 설정 (`.env*` 읽기·쓰기 차단, 피드백 루프 기록)
 - [`.claude/commands/`](./.claude/commands) — 기존 Claude 슬래시 커맨드
   - [`/dev`](./.claude/commands/dev.md) · [`/check`](./.claude/commands/check.md) · [`/test`](./.claude/commands/test.md) · [`/review-pr`](./.claude/commands/review-pr.md) · [`/fix-issue`](./.claude/commands/fix-issue.md)
+- [`.github/pull_request_template.md`](./.github/pull_request_template.md) — PR 검증 게이트와 피드백 루프 체크리스트
+- [`CLAUDE.md`](./CLAUDE.md) — Claude Code 가 `AGENTS.md` 를 import 하는 얇은 진입점
 
-> 프로젝트 규칙(React/테스트/스타일/커밋)은 본 `AGENTS.md` 가 단일 소스(SSOT)다. Codex 가 자동으로 읽는 파일도 `AGENTS.md` 뿐이므로 룰 파일을 별도 디렉터리로 분리하지 않는다.
+> 프로젝트 규칙(React/테스트/스타일/커밋/검증 게이트)은 본 `AGENTS.md` 가 단일 소스(SSOT)다. 다른 에이전트용 진입점은 이 파일을 import 하거나 참조한다.
