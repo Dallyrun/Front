@@ -63,3 +63,23 @@ export async function logout(accessToken: string): Promise<void> {
     // ApiError 는 swallow — 로컬 정리를 보장하는 게 우선
   }
 }
+
+/**
+ * 회원탈퇴. `DELETE /api/members/me` + Authorization 헤더 + JSON `{ password }`.
+ * 서버는 계정을 soft delete 하고 refresh token 도 함께 폐기.
+ *
+ * ⚠️ 401 의 의미가 두 가지 (INVALID_TOKEN / INVALID_CREDENTIALS) 이지만 HTTP status
+ * 만으로 구분 불가. UI 에선 "비밀번호가 올바르지 않습니다" 로 일관 처리. (토큰 만료
+ * 동시 발생 시엔 재로그인 후 재시도하면 됨.)
+ *
+ * authedRequest 를 쓰지 않는 이유: 401 자동 refresh 재시도가 비번 불일치 케이스에서
+ * 사용자를 마이페이지에서 튕겨나가게 만들 수 있음 (refresh 성공 → 재시도 → 다시 401 →
+ * store clear). 그래서 plain apiRequest 로 명시적 호출.
+ */
+export function deleteAccount(accessToken: string, password: string): Promise<void> {
+  return apiRequest<void>('/api/members/me', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: { password },
+  });
+}
