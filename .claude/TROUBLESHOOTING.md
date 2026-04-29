@@ -1,5 +1,7 @@
 # Troubleshooting · Trade-offs · Performance Log
 
+> Historical archive. New shared feedback-loop entries go to [`.agents/FEEDBACK.md`](../.agents/FEEDBACK.md).
+
 이 파일은 작업 중 발생한 **트러블슈팅 / 트레이드오프 / 성능 개선** 을 시간 역순으로 누적한다.
 **새 항목은 항상 맨 위.** 매 턴 종료 시 `.claude/settings.json` 의 Stop 훅이 서브에이전트를 띄워
 변경분을 검토하고 자동 추가한다 — 수동 실행은 필요 없음.
