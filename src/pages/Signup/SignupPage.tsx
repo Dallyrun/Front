@@ -89,7 +89,7 @@ function SignupPage() {
     mutationFn: signupWithEmail,
     onSuccess: (tokens) => {
       setTokens(tokens);
-      navigate('/', { replace: true });
+      navigate('/mypage', { replace: true });
     },
   });
 

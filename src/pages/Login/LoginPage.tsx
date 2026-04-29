@@ -22,7 +22,7 @@ function LoginPage() {
     mutationFn: loginWithEmail,
     onSuccess: (tokens) => {
       setTokens(tokens);
-      navigate('/', { replace: true });
+      navigate('/mypage', { replace: true });
     },
   });
 
