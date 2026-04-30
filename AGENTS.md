@@ -303,6 +303,7 @@ UI 에선 두 가지 모두 `toUserMessage` 로 일관 변환하되, 로그인 4
 저장소 루트의 `.agents/`, `.claude/`, `.github/`, `CLAUDE.md` 에 프로젝트 전용 자동화 설정이 있다.
 
 - [`.agents/skills/create-pr/`](./.agents/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
+- [`.agents/hooks/architecture-alignment.md`](./.agents/hooks/architecture-alignment.md) — 레이어 분리 / 단일 책임 / 의존 방향 체크리스트 (명시 호출용)
 - [`.agents/FEEDBACK.md`](./.agents/FEEDBACK.md) — 검증 실패 / 리뷰 지적 / 트레이드오프 교훈을 누적하는 피드백 루프
 - [`.claude/settings.json`](./.claude/settings.json) — Claude permissions / Stop hook 설정 (`.env*` 읽기·쓰기 차단, 피드백 루프 기록)
 - [`.claude/commands/`](./.claude/commands) — 기존 Claude 슬래시 커맨드
