@@ -110,7 +110,7 @@ npm run verify:fast         # typecheck + lint + test 빠른 게이트
 | 서버 상태       | `@tanstack/react-query` v5                                  |
 | 클라이언트 상태 | `zustand` v4                                                |
 | 스타일          | Plain CSS + CSS Modules (`*.module.css`)                    |
-| 린트 / 포맷     | ESLint 9 (flat config) + Prettier 3                         |
+| 린트 / 포맷     | ESLint 9 (flat config, `eslint-plugin-import`) + Prettier 3 |
 | 테스트          | Vitest + @testing-library/react + jsdom                     |
 | 에이전트 하네스 | AGENTS.md + CLAUDE.md import + `.agents/FEEDBACK.md`        |
 
@@ -264,6 +264,7 @@ UI 에선 두 가지 모두 `toUserMessage` 로 일관 변환하되, 로그인 4
 - 컴포넌트/페이지는 **폴더 단위**로 구성: `ComponentName/ComponentName.tsx`, `ComponentName.module.css`, `ComponentName.test.tsx`.
 - 하나의 파일은 **하나의 명확한 책임**만 가진다 (단일 책임 원칙).
 - 절대 경로 import 는 `@/...` 을 사용하고, 상대 경로는 같은 폴더 내에서만 사용.
+- **import 문은 항상 파일 최상단**에 모아 둔다. 함수/블록 내부 import 와 동일 모듈 중복 import 금지 (ESLint `import/first` + `import/no-duplicates` 로 강제). 코드 분할이 필요한 진짜 동적 로딩만 예외이며, 그 경우에도 ESLint disable 코멘트로 의도를 표시한다.
 - `console.log` 는 커밋 금지. 디버그용은 PR 올리기 전에 제거한다.
 
 ### Naming
