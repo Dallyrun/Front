@@ -749,25 +749,25 @@ export function ProfileEditPage() {
 
 export function SettingsPage() {
   const settings = [
-    '전체 공개',
-    '팔로워만',
-    '비공개',
-    '측정 단위',
-    '언어',
-    '차단한 사용자',
-    '데이터 다운로드',
-    '버전/정보',
-    '로그아웃',
-    '회원탈퇴',
+    { label: '전체 공개', description: '모든 러너가 내 프로필과 기록을 볼 수 있어요' },
+    { label: '팔로워만', description: '나를 팔로우한 러너에게만 공개해요' },
+    { label: '비공개', description: '내 기록과 활동을 나만 볼 수 있어요' },
+    { label: '측정 단위', description: '거리와 페이스 단위를 km 기준으로 표시해요' },
+    { label: '언어', description: '한국어와 영어 표시를 관리해요' },
+    { label: '차단한 사용자', description: '차단 목록을 확인하고 해제할 수 있어요' },
+    { label: '데이터 다운로드', description: '내 기록과 계정 데이터를 내려받아요' },
+    { label: '버전/정보', description: '서비스 버전과 약관 정보를 확인해요' },
+    { label: '로그아웃', description: '현재 브라우저에서 계정을 로그아웃해요' },
+    { label: '회원탈퇴', description: '계정 삭제 전 보관 데이터를 확인해요' },
   ];
   return (
     <WebShell title="설정" subtitle="공개 범위, 알림, 단위, 언어, 데이터와 계정을 관리합니다.">
       <Card title="계정 설정">
         <div className={styles.settingsList}>
           {settings.map((item) => (
-            <button key={item} type="button">
-              {item}
-              <span>{item === '데이터 다운로드' ? '내 기록 내려받기' : '설정 항목'}</span>
+            <button key={item.label} type="button">
+              {item.label}
+              <span>{item.description}</span>
             </button>
           ))}
         </div>
