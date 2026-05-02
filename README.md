@@ -51,4 +51,4 @@ VITE_USE_MOCK_API=false
 
 ## 기타
 
-작업 컨벤션 및 아키텍처 설명은 [`CLAUDE.md`](./CLAUDE.md) 참고.
+작업 컨벤션 및 아키텍처 설명은 [`AGENTS.md`](./AGENTS.md) 참고.

@@ -27,4 +27,4 @@ Vitest 를 실행한다.
 
 ## 참고
 
-- 테스트 파일은 대상과 같은 폴더의 `*.test.ts(x)` 이어야 한다 (`.Codex/rules/testing.md`).
+- 테스트 파일은 대상과 같은 폴더의 `*.test.ts(x)` 이어야 한다 (`AGENTS.md` Testing 섹션).
