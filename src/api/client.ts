@@ -1,6 +1,9 @@
 import type { ApiEnvelope, ApiErrorBody } from '@/types/auth';
 
+import { mockApiRequest } from './mockApi';
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
 /**
  * HTTP 응답이 왔지만 4xx/5xx 인 경우. `status` 코드 + 서버 제공 message 를 담음.
@@ -40,6 +43,10 @@ export type RequestOptions = Omit<RequestInit, 'body'> & {
  * - fetch 자체가 실패하면 `NetworkError` 로 rethrow
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (USE_MOCK_API) {
+    return mockApiRequest<T>(path, options);
+  }
+
   const { body, headers, ...rest } = options;
 
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
