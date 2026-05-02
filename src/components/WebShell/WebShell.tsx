@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
-import Logo from '@/components/Logo/Logo';
+import logoIcon from '@/asset/dallyrunicon.png';
 import { profile } from '@/mock/dallyrun';
 
 import styles from './WebShell.module.css';
@@ -27,7 +27,13 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
   return (
     <div className={styles.shell}>
       <aside className={styles.sidebar} aria-label="주요 메뉴">
-        <Logo size="sm" withTagline={false} as="div" />
+        <div className={styles.brand}>
+          <img src={logoIcon} alt="" aria-hidden="true" draggable={false} />
+          <span>
+            <strong>달리런</strong>
+            <small>Dallyrun</small>
+          </span>
+        </div>
         <nav className={styles.nav}>
           {navItems.map((item) => (
             <NavLink
@@ -43,7 +49,7 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
           ))}
         </nav>
         <div className={styles.sidebarProfile}>
-          <span className={styles.avatar}>정</span>
+          <img src={logoIcon} alt="" aria-hidden="true" className={styles.sidebarAvatar} />
           <span>
             <strong>정민</strong>
             <small>{profile.yearLabel}</small>

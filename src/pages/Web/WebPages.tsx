@@ -43,7 +43,7 @@ function Chip({
   tone = 'blue',
 }: {
   children: ReactNode;
-  tone?: 'blue' | 'green' | 'amber' | 'slate' | 'red';
+  tone?: 'blue' | 'softBlue' | 'green' | 'amber' | 'slate' | 'red';
 }) {
   return <span className={`${styles.chip} ${styles[`chip${tone}`]}`}>{children}</span>;
 }
@@ -64,11 +64,22 @@ function SecondaryLink({ to, children }: { to: string; children: ReactNode }) {
   );
 }
 
-function StatCard({ label, value, caption }: { label: string; value: string; caption?: string }) {
+function StatCard({
+  label,
+  value,
+  caption,
+  tone = 'blue',
+}: {
+  label: string;
+  value: string;
+  caption?: string;
+  tone?: 'blue' | 'green';
+}) {
   return (
     <div className={styles.statCard}>
-      <strong>{value}</strong>
+      <span className={`${styles.statAccent} ${styles[`statAccent${tone}`]}`} aria-hidden="true" />
       <span>{label}</span>
+      <strong>{value}</strong>
       {caption && <small>{caption}</small>}
     </div>
   );
@@ -139,19 +150,33 @@ export function DashboardHomePage() {
     <WebShell
       title="러닝 인사이트 홈"
       subtitle="오늘의 기록, 목표, 커뮤니티 소식을 한 화면에서 확인합니다."
-      action={<PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>}
+      action={
+        <>
+          <SecondaryLink to="/records">기록 보기</SecondaryLink>
+          <PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>
+        </>
+      }
     >
       <div className={styles.heroGrid}>
         <Card className={styles.heroCard}>
-          <Chip>{latestRun.runType}</Chip>
-          <h2>오늘 러닝 상태</h2>
-          <p>
-            어제 10K 완주 기록이 반영됐어요. 기록 상세에서 구간별 페이스와 메모를 확인하고,
-            커뮤니티에 러닝 후기를 남길 수 있습니다.
-          </p>
-          <div className={styles.actions}>
-            <PrimaryLink to={`/records/${latestRun.id}`}>최근 기록 보기</PrimaryLink>
-            <SecondaryLink to="/community/new">피드 글쓰기</SecondaryLink>
+          <div>
+            <Chip tone="softBlue">오늘 러닝 상태</Chip>
+            <h2>어제 10K 완주 기록이 반영됐어요</h2>
+            <p>
+              최근 7일 누적 거리는 18.4km입니다. 기록 상세에서 구간별 페이스와 메모를 확인하고,
+              커뮤니티에 러닝 후기를 남길 수 있습니다.
+            </p>
+            <div className={styles.actions}>
+              <PrimaryLink to={`/records/${latestRun.id}`}>최근 기록 보기</PrimaryLink>
+              <SecondaryLink to="/community/new">피드 글쓰기</SecondaryLink>
+            </div>
+          </div>
+          <div className={styles.routePreview} aria-label="최근 러닝 요약">
+            <span />
+            <span />
+            <span />
+            <strong>{latestRun.distance}</strong>
+            <strong>{latestRun.duration}</strong>
           </div>
         </Card>
         <Card title="월간 목표">
@@ -164,21 +189,52 @@ export function DashboardHomePage() {
           <SecondaryLink to="/goals/edit">목표 수정</SecondaryLink>
         </Card>
       </div>
-      <div className={styles.statGrid}>
+      <div className={styles.homeStatGrid}>
         <StatCard label="이번 주 거리" value="18.4 km" caption="지난주보다 +12%" />
-        <StatCard label="평균 페이스" value="5'42&quot;" caption="최근 5회 평균" />
+        <StatCard label="평균 페이스" value="5'42&quot;" caption="최근 5회 평균" tone="green" />
         <StatCard label="연속 러닝" value="7일" caption="이번 주 3회 기록" />
         <StatCard label="신규 PR" value="10K" caption="04.28 달성" />
       </div>
       <div className={styles.twoColumn}>
-        <Card title="커뮤니티">
+        <Card>
+          <div className={styles.panelHeader}>
+            <h2>커뮤니티</h2>
+            <PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>
+          </div>
           {posts.map((post) => (
-            <PostListItem key={post.id} post={post} />
+            <Link key={post.id} to={`/community/${post.id}`} className={styles.feedPreviewItem}>
+              <span className={styles.feedAvatar}>달</span>
+              <span>
+                <strong>{post.author}</strong>
+                <small>
+                  {post.crew} · {post.timeAgo}
+                </small>
+                <em>{post.body}</em>
+              </span>
+            </Link>
           ))}
         </Card>
-        <Card title="크루 일정">
+        <Card>
+          <div className={styles.panelHeader}>
+            <h2>이번 주 크루 일정</h2>
+            <SecondaryLink to="/crews">크루 찾기</SecondaryLink>
+          </div>
           {primaryCrew.recruits.slice(0, 2).map((recruit) => (
-            <RecruitItem key={recruit.id} recruit={recruit} crewId={primaryCrew.id} />
+            <Link
+              key={recruit.id}
+              to={`/crews/${primaryCrew.id}/recruits/${recruit.id}`}
+              className={styles.scheduleItem}
+            >
+              <Chip tone={recruit.type === '정기런' ? 'green' : 'softBlue'}>
+                {recruit.schedule.split(' ')[0]}
+              </Chip>
+              <span>
+                <strong>{recruit.title}</strong>
+                <small>
+                  {recruit.schedule} · {recruit.place} · {recruit.pace} · {recruit.participants}
+                </small>
+              </span>
+            </Link>
           ))}
         </Card>
       </div>
