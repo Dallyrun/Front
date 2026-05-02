@@ -366,32 +366,38 @@ export function DashboardHomePage() {
   const [currentGoal] = useWebGoal();
   const [webPosts] = useWebPosts();
   const [webCrews] = useWebCrews();
-  const progress = Math.round((currentGoal.currentKm / currentGoal.targetKm) * 100);
+  const progress = Math.min(
+    100,
+    Math.round((currentGoal.currentKm / Math.max(currentGoal.targetKm, 1)) * 100),
+  );
+  const remainingKm = Math.max(currentGoal.targetKm - currentGoal.currentKm, 0).toFixed(1);
   const latestRun = getRunRecord('hangang-night-8k');
   const primaryCrew = getWebCrew(webCrews, 'hangang-crew');
+  const nextRecruit = primaryCrew.recruits[0];
+
   return (
     <WebShell
-      title="러닝 인사이트 홈"
-      subtitle="오늘의 기록, 목표, 커뮤니티 소식을 한 화면에서 확인합니다."
+      title="홈"
+      subtitle="앱 홈과 같은 핵심 요약을 웹 화면에 맞춰 넓게 보여줍니다."
       action={
         <>
           <SecondaryLink to="/records">기록 보기</SecondaryLink>
-          <PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>
+          <PrimaryLink to="/goals">목표 보기</PrimaryLink>
         </>
       }
     >
       <div className={styles.heroGrid}>
         <Card className={styles.heroCard}>
           <div>
-            <Chip tone="softBlue">오늘 러닝 상태</Chip>
-            <h2>어제 10K 완주 기록이 반영됐어요</h2>
+            <Chip tone="softBlue">오늘의 러닝</Chip>
+            <h2>{profile.nickname}님, 최근 러닝 흐름이 좋아요</h2>
             <p>
-              최근 7일 누적 거리는 18.4km입니다. 기록 상세에서 구간별 페이스와 메모를 확인하고,
-              커뮤니티에 러닝 후기를 남길 수 있습니다.
+              최근 기록은 {latestRun.distance}, 이번 {currentGoal.period} 목표는 {progress}% 달성
+              중입니다. 앱 홈처럼 목표, 기록, 크루, 커뮤니티를 같은 우선순위로 정리했습니다.
             </p>
             <div className={styles.actions}>
               <PrimaryLink to={`/records/${latestRun.id}`}>최근 기록 보기</PrimaryLink>
-              <SecondaryLink to="/community/new">피드 글쓰기</SecondaryLink>
+              <SecondaryLink to="/goals">목표 확인</SecondaryLink>
             </div>
           </div>
           <div className={styles.routePreview} aria-label="최근 러닝 요약">
@@ -402,26 +408,39 @@ export function DashboardHomePage() {
             <strong>{latestRun.duration}</strong>
           </div>
         </Card>
-        <Card title="월간 목표">
+        <Card title={`${currentGoal.period} 목표`}>
           <strong className={styles.bigNumber}>{progress}%</strong>
           <ProgressBar value={progress} />
           <p>
-            {currentGoal.targetKm}km 중 {currentGoal.currentKm}km 완료. 남은 거리{' '}
-            {(currentGoal.targetKm - currentGoal.currentKm).toFixed(1)}km
+            {currentGoal.targetKm}km 중 {currentGoal.currentKm}km 완료. 남은 거리 {remainingKm}km
           </p>
           <SecondaryLink to="/goals/edit">목표 수정</SecondaryLink>
         </Card>
       </div>
       <div className={styles.homeStatGrid}>
-        <StatCard label="이번 주 거리" value="18.4 km" caption="지난주보다 +12%" />
-        <StatCard label="평균 페이스" value="5'42&quot;" caption="최근 5회 평균" tone="green" />
-        <StatCard label="연속 러닝" value="7일" caption="이번 주 3회 기록" />
-        <StatCard label="신규 PR" value="10K" caption="04.28 달성" />
+        <StatCard label="누적 거리" value={profile.totalDistance} caption="프로필과 동일 지표" />
+        <StatCard label="러닝" value={`${profile.runCount}회`} caption="완료한 러닝" />
+        <StatCard
+          label="평균 페이스"
+          value={profile.averagePace}
+          caption="전체 기록 평균"
+          tone="green"
+        />
+        <StatCard label="뱃지" value={`${profile.badgeCount}개`} caption="획득한 뱃지" />
       </div>
+      <Card>
+        <div className={styles.panelHeader}>
+          <h2>최근 러닝 기록</h2>
+          <SecondaryLink to="/records">전체 기록 보기</SecondaryLink>
+        </div>
+        {runRecords.slice(0, 3).map((record) => (
+          <RunListItem key={record.id} record={record} />
+        ))}
+      </Card>
       <div className={styles.twoColumn}>
         <Card>
           <div className={styles.panelHeader}>
-            <h2>커뮤니티</h2>
+            <h2>커뮤니티 피드</h2>
             <PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>
           </div>
           {webPosts.slice(0, 3).map((post) => (
@@ -439,9 +458,26 @@ export function DashboardHomePage() {
         </Card>
         <Card>
           <div className={styles.panelHeader}>
-            <h2>이번 주 크루 일정</h2>
+            <h2>내 크루</h2>
             <SecondaryLink to="/crews">크루 찾기</SecondaryLink>
           </div>
+          <Link to={`/crews/${primaryCrew.id}`} className={styles.listItem}>
+            <span>
+              <strong>{primaryCrew.name}</strong>
+              <small>
+                {primaryCrew.area} · 멤버 {primaryCrew.memberCount}명 · {primaryCrew.activityTime}
+              </small>
+            </span>
+            <Chip tone="softBlue">{primaryCrew.averagePace}</Chip>
+          </Link>
+          {nextRecruit && (
+            <div className={styles.homeSectionNote}>
+              <strong>다가오는 모임</strong>
+              <span>
+                {nextRecruit.schedule} · {nextRecruit.place} · {nextRecruit.participants}
+              </span>
+            </div>
+          )}
           {primaryCrew.recruits.slice(0, 2).map((recruit) => (
             <Link
               key={recruit.id}

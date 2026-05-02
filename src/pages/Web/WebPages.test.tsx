@@ -46,9 +46,13 @@ describe('Web design pages', () => {
   it('대시보드 홈의 핵심 CTA와 목표 카드를 렌더한다', () => {
     renderPage(<DashboardHomePage />);
 
-    expect(screen.getByRole('heading', { level: 1, name: '러닝 인사이트 홈' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: '홈' })).toBeInTheDocument();
+    expect(screen.getByText('오늘의 러닝')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: '피드 글쓰기' }).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { level: 2, name: '월간 목표' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '최근 러닝 기록' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '커뮤니티 피드' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '내 크루' })).toBeInTheDocument();
   });
 
   it('목표 화면에서 현재 목표와 수정 진입점을 먼저 렌더한다', () => {
