@@ -9,9 +9,7 @@ import {
   followers,
   following,
   getBadge,
-  getCrew,
   getPost,
-  getRecruit,
   getRunRecord,
   goal,
   notifications,
@@ -20,6 +18,7 @@ import {
   runRecords,
 } from '@/mock/dallyrun';
 import type {
+  Crew,
   Goal,
   NotificationCategory,
   NotificationItem,
@@ -168,8 +167,10 @@ function useStoredState<T>(
 
 const goalStorageKey = 'dallyrun-web-goal';
 const postsStorageKey = 'dallyrun-web-posts';
+const crewsStorageKey = 'dallyrun-web-crews';
 const profileStorageKey = 'dallyrun-web-profile';
 const settingsStorageKey = 'dallyrun-web-settings';
+const runMemoStorageKey = 'dallyrun-web-run-memos';
 
 function useWebGoal() {
   return useStoredState<Goal>(goalStorageKey, goal);
@@ -179,12 +180,33 @@ function useWebPosts() {
   return useStoredState<Post[]>(postsStorageKey, posts);
 }
 
+function useWebCrews() {
+  return useStoredState<Crew[]>(crewsStorageKey, crews);
+}
+
 function useWebProfile() {
   return useStoredState(profileStorageKey, profile);
 }
 
+function getWebCrew(webCrews: Crew[], id?: string) {
+  const fallback = webCrews[0];
+  if (!fallback) throw new Error('Mock crews are empty');
+  return webCrews.find((crew) => crew.id === id) ?? fallback;
+}
+
+function getWebRecruit(webCrews: Crew[], crewId?: string, recruitId?: string) {
+  const crew = getWebCrew(webCrews, crewId);
+  const fallback = crew.recruits[0];
+  if (!fallback) throw new Error(`Mock recruits are empty for crew ${crew.id}`);
+  return {
+    crew,
+    recruit: crew.recruits.find((recruit) => recruit.id === recruitId) ?? fallback,
+  };
+}
+
 const postCategories: PostCategory[] = ['러닝 후기', '코스 공유', '초보 Q&A', '장비'];
 const recruitTypes: RecruitType[] = ['정기런', '번개런', '대회'];
+const goalTargetPresets = [30, 50, 80, 100];
 const notificationFilters: NotificationCategory[] = ['전체', '소셜', '크루', '뱃지', '팔로우'];
 const privacyOptions: Array<{ value: PrivacyScope; label: string; description: string }> = [
   { value: 'PUBLIC', label: '전체 공개', description: '모든 러너가 볼 수 있어요' },
@@ -343,9 +365,10 @@ const crewFilterGroups: Array<{
 export function DashboardHomePage() {
   const [currentGoal] = useWebGoal();
   const [webPosts] = useWebPosts();
+  const [webCrews] = useWebCrews();
   const progress = Math.round((currentGoal.currentKm / currentGoal.targetKm) * 100);
   const latestRun = getRunRecord('hangang-night-8k');
-  const primaryCrew = getCrew('hangang-crew');
+  const primaryCrew = getWebCrew(webCrews, 'hangang-crew');
   return (
     <WebShell
       title="러닝 인사이트 홈"
@@ -498,6 +521,22 @@ export function RecordsPage() {
 export function RunningDetailPage() {
   const { runId } = useParams();
   const record = getRunRecord(runId);
+  const [splitMode, setSplitMode] = useState<'전체' | 'BEST'>('전체');
+  const [selectedPhoto, setSelectedPhoto] = useState(record.photos[0] ?? '');
+  const [memoByRunId, setMemoByRunId] = useStoredState<Record<string, string>>(
+    runMemoStorageKey,
+    {},
+  );
+  const [memoDraft, setMemoDraft] = useState(memoByRunId[record.id] ?? record.memo);
+  const [memoStatus, setMemoStatus] = useState('');
+  const visibleSplits =
+    splitMode === 'BEST' ? record.splits.filter((split) => split.isBest) : record.splits;
+
+  const saveMemo = () => {
+    setMemoByRunId({ ...memoByRunId, [record.id]: memoDraft });
+    setMemoStatus('메모가 mock 데이터에 저장됐어요.');
+  };
+
   return (
     <WebShell
       title="러닝 기록 상세"
@@ -521,7 +560,23 @@ export function RunningDetailPage() {
       </Card>
       <div className={styles.twoColumn}>
         <Card title="구간별 페이스">
-          {record.splits.map((split) => (
+          <div className={styles.tabList} role="tablist" aria-label="스플릿 보기 방식">
+            {(['전체', 'BEST'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="tab"
+                aria-selected={splitMode === mode}
+                className={`${styles.tabButton} ${
+                  splitMode === mode ? styles.tabButtonActive : ''
+                }`}
+                onClick={() => setSplitMode(mode)}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+          {visibleSplits.map((split) => (
             <div key={split.km} className={styles.splitRow}>
               <span>{split.km}km</span>
               <ProgressBar value={split.value} />
@@ -532,10 +587,46 @@ export function RunningDetailPage() {
         <Card title="메모와 사진">
           <div className={styles.photoGrid}>
             {record.photos.map((photo) => (
-              <span key={photo}>{photo}</span>
+              <button
+                key={photo}
+                type="button"
+                className={`${styles.photoTile} ${
+                  selectedPhoto === photo ? styles.photoTileActive : ''
+                }`}
+                aria-pressed={selectedPhoto === photo}
+                onClick={() => setSelectedPhoto(photo)}
+              >
+                {photo}
+              </button>
             ))}
           </div>
-          <p>{record.memo}</p>
+          <div className={styles.settingsPreview}>
+            <strong>선택한 사진</strong>
+            <span>{selectedPhoto || '사진 없음'}</span>
+          </div>
+          <label className={styles.compactSearch}>
+            러닝 메모
+            <textarea
+              aria-label="러닝 메모"
+              value={memoDraft}
+              onChange={(event) => {
+                setMemoDraft(event.target.value);
+                setMemoStatus('');
+              }}
+            />
+          </label>
+          <div className={styles.actions}>
+            <SecondaryButton
+              onClick={() => {
+                setMemoDraft(record.memo);
+                setMemoStatus('기본 메모로 되돌렸어요.');
+              }}
+            >
+              되돌리기
+            </SecondaryButton>
+            <PrimaryButton onClick={saveMemo}>메모 저장</PrimaryButton>
+          </div>
+          {memoStatus && <p className={styles.statusMessage}>{memoStatus}</p>}
         </Card>
       </div>
     </WebShell>
@@ -631,8 +722,13 @@ export function GoalEditPage() {
     Math.round((draft.currentKm / Math.max(Number(draft.targetKm), 1)) * 100),
   );
   const remainingKm = Math.max(Number(draft.targetKm) - draft.currentKm, 0).toFixed(1);
+  const isGoalInvalid = draft.title.trim().length === 0 || Number(draft.targetKm) <= 0;
 
   const saveGoal = () => {
+    if (isGoalInvalid) {
+      setStatus('목표 이름과 목표 거리를 확인해주세요.');
+      return;
+    }
     setStoredGoal(draft);
     setStatus('목표가 mock 데이터에 저장됐어요.');
   };
@@ -658,18 +754,25 @@ export function GoalEditPage() {
                 onChange={(event) => setDraft({ ...draft, title: event.target.value })}
               />
             </label>
-            <label>
-              기간
-              <select
-                value={draft.period}
-                onChange={(event) =>
-                  setDraft({ ...draft, period: event.target.value as Goal['period'] })
-                }
-              >
-                <option>주간</option>
-                <option>월간</option>
-              </select>
-            </label>
+            <div className={styles.formField}>
+              <span>기간</span>
+              <div className={styles.inlineSegment} role="tablist" aria-label="목표 기간">
+                {(['주간', '월간'] as const).map((period) => (
+                  <button
+                    key={period}
+                    type="button"
+                    role="tab"
+                    aria-selected={draft.period === period}
+                    className={`${styles.filterButton} ${
+                      draft.period === period ? styles.filterButtonActive : ''
+                    }`}
+                    onClick={() => setDraft({ ...draft, period })}
+                  >
+                    {period}
+                  </button>
+                ))}
+              </div>
+            </div>
             <label>
               목표 거리
               <input
@@ -678,6 +781,17 @@ export function GoalEditPage() {
                 value={draft.targetKm}
                 onChange={(event) =>
                   setDraft({ ...draft, targetKm: Number(event.target.value || 0) })
+                }
+              />
+            </label>
+            <label>
+              현재 거리
+              <input
+                type="number"
+                min="0"
+                value={draft.currentKm}
+                onChange={(event) =>
+                  setDraft({ ...draft, currentKm: Number(event.target.value || 0) })
                 }
               />
             </label>
@@ -695,6 +809,24 @@ export function GoalEditPage() {
                 onChange={(event) => setDraft({ ...draft, endDate: event.target.value })}
               />
             </label>
+            <div className={styles.formWide}>
+              <strong>거리 프리셋</strong>
+              <div className={styles.inlineSegment} aria-label="목표 거리 프리셋">
+                {goalTargetPresets.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={`${styles.filterButton} ${
+                      draft.targetKm === preset ? styles.filterButtonActive : ''
+                    }`}
+                    aria-pressed={draft.targetKm === preset}
+                    onClick={() => setDraft({ ...draft, targetKm: preset })}
+                  >
+                    {preset}km
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           {status && <p className={styles.statusMessage}>{status}</p>}
         </Card>
@@ -708,9 +840,10 @@ export function GoalEditPage() {
           <div className={styles.actions}>
             <SecondaryButton onClick={() => setDraft(storedGoal)}>되돌리기</SecondaryButton>
             <PrimaryButton
+              disabled={isGoalInvalid}
               onClick={() => {
                 saveGoal();
-                navigate('/goals');
+                if (!isGoalInvalid) navigate('/goals');
               }}
             >
               저장 후 보기
@@ -761,6 +894,10 @@ export function BadgeListPage() {
 export function BadgeDetailPage() {
   const { badgeId } = useParams();
   const badge = getBadge(badgeId);
+  const [activeTab, setActiveTab] = useState<'조건' | '관련 기록'>('조건');
+  const [status, setStatus] = useState('');
+  const badgeProgressValue = badge.status === '획득' ? 100 : 85;
+
   return (
     <WebShell
       title="뱃지 상세"
@@ -773,21 +910,56 @@ export function BadgeDetailPage() {
           <Chip tone={badge.status === '획득' ? 'green' : 'slate'}>{badge.status}</Chip>
           <h2>{badge.title}</h2>
           <p>{badge.description}</p>
-          <ProgressBar value={badge.status === '획득' ? 100 : 85} />
+          <ProgressBar value={badgeProgressValue} />
           <p>조건 달성 {badge.progress}</p>
         </div>
       </Card>
-      <div className={styles.twoColumn}>
+      <div className={styles.tabList} role="tablist" aria-label="뱃지 상세 탭">
+        {(['조건', '관련 기록'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
+            className={`${styles.tabButton} ${activeTab === tab ? styles.tabButtonActive : ''}`}
+            onClick={() => {
+              setActiveTab(tab);
+              setStatus('');
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+      {activeTab === '조건' && (
         <Card title="획득 조건">
-          <p>조건 1 단일 러닝 기록 거리 10km 이상</p>
-          <p>조건 2 GPS 기록이 정상 저장된 러닝</p>
-          <p>조건 3 삭제되지 않은 공개 가능 기록</p>
+          {[
+            '단일 러닝 기록 거리 10km 이상',
+            'GPS 기록이 정상 저장된 러닝',
+            '삭제되지 않은 공개 가능 기록',
+          ].map((condition, index) => (
+            <label key={condition} className={styles.settingToggle}>
+              <span>
+                <strong>조건 {index + 1}</strong>
+                <small>{condition}</small>
+              </span>
+              <input type="checkbox" checked={badge.status === '획득' || index < 2} readOnly />
+            </label>
+          ))}
         </Card>
+      )}
+      {activeTab === '관련 기록' && (
         <Card title="관련 기록">
           <RunListItem record={getRunRecord('tempo-10k')} />
-          <SecondaryLink to="/community/new">게시글에 공유</SecondaryLink>
+          <div className={styles.actions}>
+            <SecondaryLink to="/community/new">게시글 작성으로 이동</SecondaryLink>
+            <PrimaryButton onClick={() => setStatus('뱃지를 게시글 첨부 mock 상태로 준비했어요.')}>
+              뱃지 첨부하기
+            </PrimaryButton>
+          </div>
+          {status && <p className={styles.statusMessage}>{status}</p>}
         </Card>
-      </div>
+      )}
     </WebShell>
   );
 }
@@ -1149,6 +1321,7 @@ export function PostDetailPage() {
 }
 
 export function CrewSearchPage() {
+  const [webCrews] = useWebCrews();
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<CrewFilters>({
     area: '전체',
@@ -1158,7 +1331,7 @@ export function CrewSearchPage() {
   });
 
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredCrews = crews.filter((crew) => {
+  const filteredCrews = webCrews.filter((crew) => {
     const matchesQuery =
       normalizedQuery.length === 0 ||
       [crew.name, crew.area, crew.description].some((value) =>
@@ -1287,7 +1460,8 @@ export function CrewSearchPage() {
 
 export function CrewDetailPage() {
   const { crewId } = useParams();
-  const crew = getCrew(crewId);
+  const [webCrews] = useWebCrews();
+  const crew = getWebCrew(webCrews, crewId);
   const [activeTab, setActiveTab] = useState<'모집글' | '멤버' | '소개'>('모집글');
   return (
     <WebShell
@@ -1365,6 +1539,9 @@ export function CrewDetailPage() {
 }
 
 export function RecruitComposePage() {
+  const { crewId } = useParams();
+  const [webCrews, setWebCrews] = useWebCrews();
+  const crew = getWebCrew(webCrews, crewId);
   const [title, setTitle] = useState('내일 오후 7시 한강 정모');
   const [schedule, setSchedule] = useState('2026.05.01 금 19:00');
   const [place, setPlace] = useState('여의도공원');
@@ -1377,13 +1554,44 @@ export function RecruitComposePage() {
   const [type, setType] = useState<RecruitType>('정기런');
   const [shouldNotify, setShouldNotify] = useState(true);
   const [status, setStatus] = useState('');
+  const canPublish =
+    title.trim().length > 0 &&
+    schedule.trim().length > 0 &&
+    place.trim().length > 0 &&
+    participants.trim().length > 0;
+
+  const publishRecruit = () => {
+    if (!canPublish) {
+      setStatus('제목, 일정, 장소, 인원은 꼭 입력해주세요.');
+      return;
+    }
+
+    const nextRecruit: Recruit = {
+      id: `recruit-${Date.now()}`,
+      type,
+      title: title.trim(),
+      schedule: schedule.trim(),
+      place: place.trim(),
+      distance: distance.trim() || '거리 미정',
+      pace: pace.trim() || '페이스 미정',
+      participants: participants.trim(),
+      description: description.trim() || '상세 설명이 아직 없어요.',
+    };
+
+    setWebCrews((current) =>
+      current.map((item) =>
+        item.id === crew.id ? { ...item, recruits: [nextRecruit, ...item.recruits] } : item,
+      ),
+    );
+    setStatus(`${crew.name}에 모집글이 등록됐어요. 크루 상세에서 바로 확인할 수 있습니다.`);
+  };
 
   return (
     <WebShell
       title="모집글 작성"
       subtitle="일정, 장소, 페이스, 인원, 모임 유형과 푸시 알림 여부를 설정합니다."
       action={
-        <PrimaryButton onClick={() => setStatus('모집글이 mock 상태로 작성됐어요.')}>
+        <PrimaryButton onClick={publishRecruit} disabled={!canPublish}>
           게시하기
         </PrimaryButton>
       }
@@ -1391,6 +1599,10 @@ export function RecruitComposePage() {
       <div className={styles.twoColumn}>
         <Card title="모집 정보">
           <div className={styles.formGrid}>
+            <label>
+              크루
+              <input value={crew.name} readOnly />
+            </label>
             <label>
               제목
               <input value={title} onChange={(event) => setTitle(event.target.value)} />
@@ -1475,7 +1687,8 @@ export function RecruitComposePage() {
 
 export function RecruitDetailPage() {
   const { crewId, recruitId } = useParams();
-  const { crew, recruit } = getRecruit(crewId, recruitId);
+  const [webCrews] = useWebCrews();
+  const { crew, recruit } = getWebRecruit(webCrews, crewId, recruitId);
   const [isJoined, setIsJoined] = useState(false);
   const participantText = useMemo(() => {
     if (!isJoined) return recruit.participants;

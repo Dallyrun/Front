@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  BadgeDetailPage,
   CommunityListPage,
   CrewDetailPage,
   CrewSearchPage,
@@ -15,6 +16,7 @@ import {
   NotificationsPage,
   PostComposePage,
   PostDetailPage,
+  RecruitComposePage,
   ProfilePage,
   RecordsPage,
   RunningDetailPage,
@@ -62,10 +64,14 @@ describe('Web design pages', () => {
     const user = userEvent.setup();
     renderPage(<GoalEditPage />);
 
+    await user.click(screen.getByRole('tab', { name: '주간' }));
+    expect(screen.getByRole('tab', { name: '주간', selected: true })).toBeInTheDocument();
+
     await user.clear(screen.getByLabelText('목표 거리'));
     await user.type(screen.getByLabelText('목표 거리'), '100');
+    await user.click(screen.getByRole('button', { name: '50km' }));
 
-    expect(screen.getByText('58%')).toBeInTheDocument();
+    expect(screen.getByText('100%')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '저장하기' }));
     expect(screen.getByText('목표가 mock 데이터에 저장됐어요.')).toBeInTheDocument();
@@ -95,7 +101,8 @@ describe('Web design pages', () => {
     expect(screen.getByText('247.8km')).toBeInTheDocument();
   });
 
-  it('러닝 상세에서 4개 핵심 지표와 메모/사진을 렌더한다', () => {
+  it('러닝 상세에서 스플릿, 사진, 메모 선택 상태를 조작한다', async () => {
+    const user = userEvent.setup();
     renderRoute(<RunningDetailPage />, '/records/:runId', '/records/hangang-night-8k');
 
     expect(screen.getByRole('heading', { level: 1, name: '러닝 기록 상세' })).toBeInTheDocument();
@@ -104,6 +111,33 @@ describe('Web design pages', () => {
     expect(screen.getByText('평균 페이스')).toBeInTheDocument();
     expect(screen.getByText('칼로리')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: '메모와 사진' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'BEST' }));
+    expect(screen.getByRole('tab', { name: 'BEST', selected: true })).toBeInTheDocument();
+    expect(screen.queryByText('1km')).not.toBeInTheDocument();
+    expect(screen.getByText('8km')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '야간 코스' }));
+    expect(screen.getByText('선택한 사진')).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText('러닝 메모'));
+    await user.type(screen.getByLabelText('러닝 메모'), '다음에는 초반 페이스를 낮춘다.');
+    await user.click(screen.getByRole('button', { name: '메모 저장' }));
+    expect(screen.getByText('메모가 mock 데이터에 저장됐어요.')).toBeInTheDocument();
+  });
+
+  it('뱃지 상세에서 조건과 관련 기록 탭을 전환하고 첨부 상태를 표시한다', async () => {
+    const user = userEvent.setup();
+    renderRoute(<BadgeDetailPage />, '/badges/:badgeId', '/badges/10k-club');
+
+    expect(screen.getByRole('tab', { name: '조건', selected: true })).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: '관련 기록' }));
+
+    expect(screen.getByRole('tab', { name: '관련 기록', selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /10K 템포런/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '뱃지 첨부하기' }));
+    expect(screen.getByText('뱃지를 게시글 첨부 mock 상태로 준비했어요.')).toBeInTheDocument();
   });
 
   it('게시글 상세에서 좋아요, 공유, 댓글을 바로 반영한다', async () => {
@@ -151,6 +185,27 @@ describe('Web design pages', () => {
     expect(screen.getByRole('link', { name: '모집글 만들기' })).toBeInTheDocument();
     expect(screen.getByText('멤버 124')).toBeInTheDocument();
     expect(screen.getAllByText('모집글').length).toBeGreaterThan(0);
+  });
+
+  it('모집글 작성은 mock 크루 데이터에 새 글을 저장한다', async () => {
+    const user = userEvent.setup();
+    renderRoute(
+      <RecruitComposePage />,
+      '/crews/:crewId/recruits/new',
+      '/crews/hangang-crew/recruits/new',
+    );
+
+    await user.clear(screen.getByLabelText('제목'));
+    await user.type(screen.getByLabelText('제목'), '토요일 5K 테스트런');
+    await user.click(screen.getByRole('tab', { name: '번개런' }));
+    await user.click(screen.getByRole('button', { name: '게시하기' }));
+
+    expect(
+      screen.getByText(
+        '한강 러닝크루에 모집글이 등록됐어요. 크루 상세에서 바로 확인할 수 있습니다.',
+      ),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem('dallyrun-web-crews')).toContain('토요일 5K 테스트런');
   });
 
   it('크루 찾기에서 검색과 필터를 조합해 결과를 바꾼다', async () => {

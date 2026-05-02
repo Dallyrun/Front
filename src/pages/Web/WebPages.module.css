@@ -1045,14 +1045,30 @@
   margin-bottom: 18px;
 }
 
-.photoGrid span {
+.photoGrid span,
+.photoTile {
   min-height: 110px;
   display: grid;
   place-items: center;
+  border: 1px solid #c9dcff;
   border-radius: 14px;
   background: #dbeafe;
   color: #1d4ed8;
+  cursor: pointer;
+  font: inherit;
   font-weight: 800;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.photoTile:hover,
+.photoTileActive {
+  border-color: #2f6bff;
+  background: linear-gradient(135deg, rgba(47, 107, 255, 0.16), rgba(22, 168, 116, 0.12)), #ffffff;
+  box-shadow: 0 16px 30px -24px rgba(47, 107, 255, 0.75);
+  transform: translateY(-1px);
 }
 
 .routePreview {
@@ -1191,11 +1207,24 @@
 }
 
 .formGrid label,
-.toggle {
+.toggle,
+.formField,
+.formWide {
   display: grid;
   gap: 8px;
   color: #475569;
   font-weight: 800;
+}
+
+.formWide {
+  grid-column: 1 / -1;
+}
+
+.inlineSegment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
 .formGrid input,
