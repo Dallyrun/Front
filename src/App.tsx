@@ -14,6 +14,7 @@ import {
   ErrorStatePage,
   FollowersPage,
   GoalEditPage,
+  GoalPage,
   HashtagPage,
   NotificationsPage,
   PostComposePage,
@@ -41,6 +42,7 @@ function App() {
         <Route path="/home" element={<DashboardHomePage />} />
         <Route path="/records" element={<RecordsPage />} />
         <Route path="/records/:runId" element={<RunningDetailPage />} />
+        <Route path="/goals" element={<GoalPage />} />
         <Route path="/goals/edit" element={<GoalEditPage />} />
         <Route path="/badges" element={<BadgeListPage />} />
         <Route path="/badges/:badgeId" element={<BadgeDetailPage />} />

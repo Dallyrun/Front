@@ -582,6 +582,147 @@
   color: #334155;
 }
 
+.goalHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 30px;
+  align-items: center;
+  min-height: 292px;
+  margin-bottom: 28px;
+  padding: 38px;
+  border: 1px solid #dbe7ff;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 90% 14%, rgba(22, 168, 116, 0.2), transparent 30%),
+    linear-gradient(112deg, #102033 0%, #1f68ff 58%, #16a874 100%);
+  color: #ffffff;
+  box-shadow: 0 22px 44px -28px rgba(31, 104, 255, 0.5);
+}
+
+.goalHero h2 {
+  max-width: 520px;
+  margin: 18px 0 8px;
+  color: #ffffff;
+  font-size: 34px;
+  line-height: 42px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.goalHero p {
+  margin: 0;
+  color: #dbeafe;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.goalHero .progressTrack {
+  max-width: 560px;
+  margin-top: 18px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.goalHero .progressTrack span {
+  background: #ffffff;
+}
+
+.goalProgressSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: flex-end;
+  margin-top: 28px;
+}
+
+.goalProgressSummary strong {
+  color: #ffffff;
+  font-size: 44px;
+  line-height: 48px;
+  font-weight: 900;
+}
+
+.goalProgressSummary span {
+  color: #dbeafe;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 700;
+}
+
+.goalHeroStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.goalHeroStats span {
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #dbeafe;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 800;
+}
+
+.goalHeroStats strong {
+  margin-bottom: 5px;
+  color: #ffffff;
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 900;
+}
+
+.goalHeatmap {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.goalHeatmap span {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: #edf3fb;
+}
+
+.goalHeatmap .heatMedium {
+  background: #c7dcff;
+}
+
+.goalHeatmap .heatStrong {
+  background: #2f6bff;
+}
+
+.goalManagement {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.goalManagement strong,
+.goalManagement span {
+  display: block;
+}
+
+.goalManagement strong {
+  color: #102033;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 900;
+}
+
+.goalManagement span {
+  color: #5f6f82;
+  font-size: 14px;
+  line-height: 21px;
+}
+
 .communityHero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -1273,6 +1414,10 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .goalHero {
+    grid-template-columns: 1fr;
+  }
+
   .profileHeroAvatar {
     width: 86px;
     height: 86px;
@@ -1355,6 +1500,29 @@ textarea {
   .postTopline {
     align-items: flex-start;
     justify-content: flex-start;
+  }
+
+  .goalHero {
+    padding: 28px;
+  }
+
+  .goalHeroStats {
+    grid-template-columns: 1fr;
+  }
+
+  .goalHero h2 {
+    font-size: 30px;
+    line-height: 38px;
+  }
+
+  .goalProgressSummary strong {
+    font-size: 38px;
+    line-height: 42px;
+  }
+
+  .goalManagement {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .crewGrid {

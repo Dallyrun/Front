@@ -8,6 +8,7 @@ import {
   CrewDetailPage,
   DashboardHomePage,
   FollowersPage,
+  GoalPage,
   NotificationsPage,
   PostDetailPage,
   ProfilePage,
@@ -37,6 +38,15 @@ describe('Web design pages', () => {
     expect(screen.getByRole('heading', { level: 1, name: '러닝 인사이트 홈' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: '피드 글쓰기' }).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { level: 2, name: '월간 목표' })).toBeInTheDocument();
+  });
+
+  it('목표 화면에서 현재 목표와 수정 진입점을 먼저 렌더한다', () => {
+    renderPage(<GoalPage />);
+
+    expect(screen.getByRole('heading', { level: 1, name: '목표' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '5월 러닝 목표' })).toBeInTheDocument();
+    expect(screen.getByText('72%')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '목표 수정' })).toBeInTheDocument();
   });
 
   it('러닝 상세에서 4개 핵심 지표와 메모/사진을 렌더한다', () => {

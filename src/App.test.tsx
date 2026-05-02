@@ -26,6 +26,7 @@ const routeCases = [
   ['/home', /러닝 인사이트 홈/],
   ['/records', /기록 분석/],
   ['/records/hangang-night-8k', /러닝 기록 상세/],
+  ['/goals', /목표/],
   ['/goals/edit', /목표 설정/],
   ['/badges', /뱃지 전체/],
   ['/badges/10k-club', /뱃지 상세/],

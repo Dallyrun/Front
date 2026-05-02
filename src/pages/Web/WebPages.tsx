@@ -357,12 +357,90 @@ export function RunningDetailPage() {
   );
 }
 
+export function GoalPage() {
+  const progress = Math.round((goal.currentKm / goal.targetKm) * 100);
+  const remainingKm = Math.max(goal.targetKm - goal.currentKm, 0).toFixed(1);
+  const heatmapValues = [
+    72, 44, 0, 88, 60, 38, 0, 92, 55, 28, 76, 0, 66, 82, 40, 0, 58, 94, 36, 64, 48,
+  ];
+
+  return (
+    <WebShell
+      title="목표"
+      subtitle="현재 설정한 거리 목표와 달성 흐름을 먼저 확인합니다."
+      action={<PrimaryLink to="/goals/edit">목표 수정</PrimaryLink>}
+    >
+      <section className={styles.goalHero}>
+        <div>
+          <Chip>{goal.period} 목표</Chip>
+          <h2>{goal.title}</h2>
+          <p>
+            {goal.startDate} - {goal.endDate}
+          </p>
+          <div className={styles.goalProgressSummary}>
+            <strong>{progress}%</strong>
+            <span>
+              {goal.targetKm}km 중 {goal.currentKm}km 완료 · 남은 거리 {remainingKm}km
+            </span>
+          </div>
+          <ProgressBar value={progress} />
+        </div>
+        <div className={styles.goalHeroStats}>
+          <span>
+            <strong>{goal.currentKm}km</strong>
+            현재 거리
+          </span>
+          <span>
+            <strong>{goal.targetKm}km</strong>
+            목표 거리
+          </span>
+          <span>
+            <strong>{remainingKm}km</strong>
+            남은 거리
+          </span>
+          <span>
+            <strong>12회</strong>
+            이번 목표 러닝
+          </span>
+        </div>
+      </section>
+      <div className={styles.twoColumn}>
+        <Card title="달성 캘린더">
+          <div className={styles.goalHeatmap} aria-label="목표 달성 캘린더">
+            {heatmapValues.map((value, index) => (
+              <span
+                key={`goal-heat-${index}-${value}`}
+                className={value >= 75 ? styles.heatStrong : value > 0 ? styles.heatMedium : ''}
+              />
+            ))}
+          </div>
+          <p>러닝한 날이 많을수록 진하게 표시됩니다.</p>
+        </Card>
+        <Card title="목표에 반영된 최근 기록">
+          {runRecords.slice(0, 3).map((record) => (
+            <RunListItem key={record.id} record={record} />
+          ))}
+        </Card>
+      </div>
+      <Card title="목표 관리">
+        <div className={styles.goalManagement}>
+          <span>
+            <strong>목표를 바꾸고 싶나요?</strong>
+            기간과 거리만 수정하면 현재 달성률이 다시 계산됩니다.
+          </span>
+          <SecondaryLink to="/goals/edit">목표 설정 / 수정</SecondaryLink>
+        </div>
+      </Card>
+    </WebShell>
+  );
+}
+
 export function GoalEditPage() {
   return (
     <WebShell
       title="목표 설정"
       subtitle="주간·월간 거리 목표를 직접 입력하고 수정합니다."
-      action={<PrimaryLink to="/home">저장하기</PrimaryLink>}
+      action={<PrimaryLink to="/goals">저장하기</PrimaryLink>}
     >
       <div className={styles.twoColumn}>
         <Card title="거리 목표">

@@ -16,7 +16,7 @@ interface WebShellProps {
 const navItems = [
   { to: '/home', label: '홈', icon: 'H' },
   { to: '/records', label: '기록', icon: 'R' },
-  { to: '/goals/edit', label: '목표', icon: 'G' },
+  { to: '/goals', label: '목표', icon: 'G' },
   { to: '/community', label: '커뮤니티', icon: 'C' },
   { to: '/crews', label: '크루', icon: 'T' },
   { to: '/profile', label: '프로필', icon: 'P' },
