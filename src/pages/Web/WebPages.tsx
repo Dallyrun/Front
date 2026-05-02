@@ -677,28 +677,56 @@ export function ProfilePage() {
     <WebShell
       title="프로필 · 계정"
       subtitle="공개 프로필, 크루, 뱃지와 공개 범위를 한 화면에서 정리합니다."
-      action={<PrimaryLink to="/profile/edit">프로필 편집</PrimaryLink>}
     >
-      <Card className={styles.detailHero}>
-        <div>
+      <section className={styles.profileHero}>
+        <div className={styles.profileHeroAvatar} aria-hidden="true">
+          JM
+        </div>
+        <div className={styles.profileHeroContent}>
           <h2>{profile.nickname}</h2>
           <p>{profile.bio}</p>
           <Link to="/followers" className={styles.inlineLink}>
             팔로워 {profile.followerCount} · 팔로잉 {profile.followingCount}
           </Link>
+          <div className={styles.profileHeroStats}>
+            <span>
+              <strong>{profile.totalDistance}</strong>
+              누적 거리
+            </span>
+            <span>
+              <strong>{profile.runCount}</strong>
+              러닝
+            </span>
+            <span>
+              <strong>{profile.averagePace}</strong>
+              평균 페이스
+            </span>
+            <span>
+              <strong>{profile.badgeCount}</strong>
+              뱃지
+            </span>
+          </div>
         </div>
-        <div className={styles.statGrid}>
-          <StatCard label="누적 거리" value={profile.totalDistance} />
-          <StatCard label="러닝" value={String(profile.runCount)} />
-          <StatCard label="평균 페이스" value={profile.averagePace} />
-          <StatCard label="뱃지" value={String(profile.badgeCount)} />
-        </div>
-      </Card>
+        <Link to="/profile/edit" className={styles.profileHeroAction}>
+          프로필 편집
+        </Link>
+      </section>
       <div className={styles.twoColumn}>
         <Card title="공개 범위">
-          <p>전체 공개 · 모든 러너가 볼 수 있어요</p>
-          <p>팔로워만 · 나를 팔로우한 사람만</p>
-          <p>비공개 · 나만 볼 수 있어요</p>
+          <div className={styles.privacyList}>
+            <span className={styles.privacyItem}>
+              <strong>전체 공개</strong>
+              모든 러너가 볼 수 있어요
+            </span>
+            <span className={styles.privacyItem}>
+              <strong>팔로워만</strong>
+              나를 팔로우한 사람만
+            </span>
+            <span className={styles.privacyItem}>
+              <strong>비공개</strong>
+              나만 볼 수 있어요
+            </span>
+          </div>
         </Card>
         <Card title="내 크루">
           {crews.map((crew) => (
