@@ -22,7 +22,7 @@ function LoginPage() {
     mutationFn: loginWithEmail,
     onSuccess: (tokens) => {
       setTokens(tokens);
-      navigate('/mypage', { replace: true });
+      navigate('/home', { replace: true });
     },
   });
 
@@ -86,6 +86,9 @@ function LoginPage() {
         <button type="submit" className={styles.submit} disabled={mutation.isPending}>
           {mutation.isPending ? '로그인 중…' : '로그인하기'}
         </button>
+        <Link to="/password-reset" className={styles.resetLink}>
+          비밀번호를 잊으셨나요?
+        </Link>
       </form>
 
       <p className={styles.footer}>
