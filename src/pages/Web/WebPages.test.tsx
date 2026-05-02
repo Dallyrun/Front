@@ -46,13 +46,14 @@ describe('Web design pages', () => {
   it('대시보드 홈의 핵심 CTA와 목표 카드를 렌더한다', () => {
     renderPage(<DashboardHomePage />);
 
-    expect(screen.getByRole('heading', { level: 1, name: '홈' })).toBeInTheDocument();
-    expect(screen.getByText('오늘의 러닝')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: '러닝 인사이트 홈' })).toBeInTheDocument();
+    expect(screen.getByText('오늘 러닝 상태')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: '피드 글쓰기' }).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { level: 2, name: '월간 목표' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: '최근 러닝 기록' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: '커뮤니티 피드' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: '내 크루' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '커뮤니티' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: '이번 주 크루 일정' }),
+    ).toBeInTheDocument();
   });
 
   it('목표 화면에서 현재 목표와 수정 진입점을 먼저 렌더한다', () => {
@@ -238,6 +239,8 @@ describe('Web design pages', () => {
     expect(screen.getByRole('heading', { level: 1, name: '프로필 · 계정' })).toBeInTheDocument();
     expect(screen.getByText('팔로워 248 · 팔로잉 187')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '프로필 편집' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '계정 설정' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '설정 열기' })).toBeInTheDocument();
 
     profileView.unmount();
     renderPage(<SettingsPage />);

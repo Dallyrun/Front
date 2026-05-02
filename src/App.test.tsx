@@ -23,7 +23,7 @@ const routeCases = [
   ['/login', /Dallyrun/],
   ['/signup', /회원가입/],
   ['/password-reset', /비밀번호를 잊어도/],
-  ['/home', /^홈$/],
+  ['/home', /러닝 인사이트 홈/],
   ['/records', /기록 분석/],
   ['/records/hangang-night-8k', /러닝 기록 상세/],
   ['/goals', /목표/],
