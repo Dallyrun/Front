@@ -107,3 +107,9 @@
   font-size: 0.875rem;
   color: var(--text-muted);
 }
+
+.resetLink {
+  align-self: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+}

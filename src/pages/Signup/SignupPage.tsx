@@ -89,7 +89,7 @@ function SignupPage() {
     mutationFn: signupWithEmail,
     onSuccess: (tokens) => {
       setTokens(tokens);
-      navigate('/mypage', { replace: true });
+      navigate('/home', { replace: true });
     },
   });
 
@@ -127,7 +127,7 @@ function SignupPage() {
   return (
     <main className={styles.page}>
       <div className={styles.header}>
-        <Logo size="sm" withTagline={false} />
+        <Logo size="sm" withTagline={false} as="div" />
         <h1 className={styles.title}>회원가입</h1>
         <p className={styles.subtitle}>이메일로 간편하게 시작해보세요.</p>
       </div>
