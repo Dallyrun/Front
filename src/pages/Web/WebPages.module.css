@@ -295,6 +295,11 @@
   background: #1f5eff;
 }
 
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .secondaryButton {
   border: 1px solid #e3eaf3;
   background: #ffffff;
@@ -1222,6 +1227,17 @@ textarea {
   font-weight: 900;
 }
 
+.compactSearch select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #e3eaf3;
+  border-radius: 12px;
+  padding: 0 14px;
+  background: #ffffff;
+  color: #102033;
+  font: inherit;
+}
+
 .badgeCard,
 .emptyCard {
   min-height: 148px;
@@ -1526,6 +1542,120 @@ textarea {
 .toggleList {
   display: grid;
   gap: 12px;
+}
+
+.settingsMenu {
+  display: grid;
+  gap: 10px;
+}
+
+.settingsMenuButton {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  border: 1px solid #e3eaf3;
+  border-radius: 16px;
+  padding: 14px 42px 14px 16px;
+  background: #ffffff;
+  color: #102033;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.settingsMenuButton::after {
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  color: #91a0b2;
+  content: '›';
+  font-size: 22px;
+  line-height: 22px;
+}
+
+.settingsMenuButton:hover,
+.settingsMenuButtonActive {
+  border-color: #a9c3ff;
+  background: #eaf2ff;
+}
+
+.settingsMenuButtonActive::after {
+  color: #2f6bff;
+}
+
+.settingsMenuButton strong,
+.settingsMenuButton span {
+  display: block;
+}
+
+.settingsMenuButton strong {
+  color: #102033;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 900;
+}
+
+.settingsMenuButton span {
+  color: #5f6f82;
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 700;
+}
+
+.settingsDetailCard {
+  min-height: 560px;
+}
+
+.settingsPanel {
+  display: grid;
+  gap: 16px;
+}
+
+.settingsPanel h3 {
+  margin: 0;
+  color: #102033;
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 900;
+}
+
+.settingsPanel > p {
+  margin: 0;
+}
+
+.settingsPreview {
+  display: grid;
+  gap: 6px;
+  min-height: 74px;
+  padding: 16px;
+  border: 1px solid #dbe7ff;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.settingsPreview strong,
+.settingsPreview span {
+  display: block;
+}
+
+.settingsPreview strong {
+  color: #102033;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 900;
+}
+
+.settingsPreview span {
+  color: #5f6f82;
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 700;
+}
+
+.mockList {
+  display: grid;
+  gap: 10px;
 }
 
 .settingChoice,

@@ -76,15 +76,17 @@ function SecondaryLink({ to, children }: { to: string; children: ReactNode }) {
 
 function PrimaryButton({
   children,
+  disabled = false,
   onClick,
   type = 'button',
 }: {
   children: ReactNode;
+  disabled?: boolean;
   onClick?: () => void;
   type?: 'button' | 'submit';
 }) {
   return (
-    <button type={type} className={styles.primaryButton} onClick={onClick}>
+    <button type={type} className={styles.primaryButton} disabled={disabled} onClick={onClick}>
       {children}
     </button>
   );
@@ -1666,7 +1668,29 @@ export function SettingsPage() {
     notificationCrew: true,
     notificationBadge: true,
   });
+  const [activePanel, setActivePanel] = useState<
+    | 'privacy'
+    | 'notifications'
+    | 'display'
+    | 'blocked'
+    | 'download'
+    | 'version'
+    | 'logout'
+    | 'delete'
+  >('privacy');
   const [status, setStatus] = useState('');
+  const [blockedUsers, setBlockedUsers] = useStoredState('dallyrun-web-blocked-users', [
+    '광고 계정',
+    '스팸 러너',
+  ]);
+  const [blockedInput, setBlockedInput] = useState('');
+  const [downloadOptions, setDownloadOptions] = useState({
+    records: true,
+    posts: true,
+    profile: true,
+    format: 'JSON',
+  });
+  const [deleteConfirm, setDeleteConfirm] = useState('');
   const notificationSettingItems: Array<{
     key: 'notificationSocial' | 'notificationCrew' | 'notificationBadge';
     label: string;
@@ -1676,91 +1700,286 @@ export function SettingsPage() {
     { key: 'notificationCrew', label: '크루 알림', description: '모집글과 일정 변경 알림' },
     { key: 'notificationBadge', label: '뱃지 알림', description: '새 뱃지 획득 알림' },
   ];
+  const downloadSettingItems: Array<{
+    key: 'records' | 'posts' | 'profile';
+    label: string;
+    description: string;
+  }> = [
+    { key: 'records', label: '러닝 기록', description: '거리, 시간, 페이스, 메모' },
+    { key: 'posts', label: '커뮤니티 활동', description: '게시글, 댓글, 좋아요' },
+    { key: 'profile', label: '프로필 정보', description: '닉네임, 소개, 공개 범위' },
+  ];
+  const settingMenuItems: Array<{
+    key: typeof activePanel;
+    label: string;
+    description: string;
+  }> = [
+    { key: 'privacy', label: '공개 범위', description: '프로필과 기록 공개 대상을 설정' },
+    { key: 'notifications', label: '알림', description: '소셜, 크루, 뱃지 알림 관리' },
+    { key: 'display', label: '표시 설정', description: '측정 단위와 언어 변경' },
+    { key: 'blocked', label: '차단한 사용자', description: '차단 목록 추가와 해제' },
+    { key: 'download', label: '데이터 다운로드', description: '내 데이터 내보내기 옵션' },
+    { key: 'version', label: '버전/정보', description: '서비스 버전과 정책 정보' },
+    { key: 'logout', label: '로그아웃', description: '현재 브라우저 세션 종료' },
+    { key: 'delete', label: '회원탈퇴', description: '계정 삭제 전 확인' },
+  ];
+
+  const openPanel = (panel: typeof activePanel) => {
+    setActivePanel(panel);
+    setStatus('');
+  };
+
+  const addBlockedUser = () => {
+    const nextName = blockedInput.trim();
+    if (!nextName || blockedUsers.includes(nextName)) return;
+    setBlockedUsers([...blockedUsers, nextName]);
+    setBlockedInput('');
+    setStatus(`${nextName}님을 차단 목록에 추가했어요.`);
+  };
+
+  const downloadCount = Object.values(downloadOptions).filter((value) => value === true).length;
 
   return (
     <WebShell title="설정" subtitle="공개 범위, 알림, 단위, 언어, 데이터와 계정을 관리합니다.">
       <div className={styles.twoColumn}>
-        <Card title="공개 범위">
-          <div className={styles.settingsSegment}>
-            {privacyOptions.map((option) => (
+        <Card title="설정 메뉴">
+          <div className={styles.settingsMenu}>
+            {settingMenuItems.map((item) => (
               <button
-                key={option.value}
+                key={item.key}
                 type="button"
-                className={`${styles.settingChoice} ${
-                  webProfile.privacy === option.value ? styles.settingChoiceActive : ''
+                className={`${styles.settingsMenuButton} ${
+                  activePanel === item.key ? styles.settingsMenuButtonActive : ''
                 }`}
-                onClick={() => {
-                  setWebProfile({ ...webProfile, privacy: option.value });
-                  setStatus(`${option.label}로 공개 범위를 변경했어요.`);
-                }}
+                onClick={() => openPanel(item.key)}
               >
-                <strong>{option.label}</strong>
-                <span>{option.description}</span>
+                <strong>{item.label}</strong>
+                <span>{item.description}</span>
               </button>
             ))}
           </div>
         </Card>
-        <Card title="알림">
-          <div className={styles.toggleList}>
-            {notificationSettingItems.map(({ key, label, description }) => (
-              <label key={key} className={styles.settingToggle}>
+        <Card title="상세 설정" className={styles.settingsDetailCard}>
+          {activePanel === 'privacy' && (
+            <div className={styles.settingsPanel}>
+              <h3>공개 범위 설정</h3>
+              <p>프로필, 누적 통계, 러닝 기록이 누구에게 보일지 선택합니다.</p>
+              <div className={styles.settingsSegment}>
+                {privacyOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`${styles.settingChoice} ${
+                      webProfile.privacy === option.value ? styles.settingChoiceActive : ''
+                    }`}
+                    onClick={() => {
+                      setWebProfile({ ...webProfile, privacy: option.value });
+                      setStatus(`${option.label}로 공개 범위를 변경했어요.`);
+                    }}
+                  >
+                    <strong>{option.label}</strong>
+                    <span>{option.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activePanel === 'notifications' && (
+            <div className={styles.settingsPanel}>
+              <h3>알림 설정</h3>
+              <p>필요한 알림만 남겨두면 대시보드와 알림 페이지가 덜 번잡해집니다.</p>
+              <div className={styles.toggleList}>
+                {notificationSettingItems.map(({ key, label, description }) => (
+                  <label key={key} className={styles.settingToggle}>
+                    <span>
+                      <strong>{label}</strong>
+                      <small>{description}</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={settings[key]}
+                      onChange={(event) =>
+                        setSettings({ ...settings, [key]: event.target.checked })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activePanel === 'display' && (
+            <div className={styles.settingsPanel}>
+              <h3>표시 설정</h3>
+              <p>러닝 거리와 화면 언어 표기를 현재 사용 습관에 맞춥니다.</p>
+              <div className={styles.formGrid}>
+                <label>
+                  측정 단위
+                  <select
+                    value={settings.unit}
+                    onChange={(event) => setSettings({ ...settings, unit: event.target.value })}
+                  >
+                    <option>km</option>
+                    <option>mile</option>
+                  </select>
+                </label>
+                <label>
+                  언어
+                  <select
+                    value={settings.language}
+                    onChange={(event) => setSettings({ ...settings, language: event.target.value })}
+                  >
+                    <option>한국어</option>
+                    <option>English</option>
+                  </select>
+                </label>
+              </div>
+              <div className={styles.settingsPreview}>
+                <strong>미리보기</strong>
                 <span>
-                  <strong>{label}</strong>
-                  <small>{description}</small>
+                  {settings.language} · {settings.unit === 'km' ? '8.2 km' : '5.1 mile'} · 평균
+                  페이스 5'23&quot;
                 </span>
+              </div>
+            </div>
+          )}
+
+          {activePanel === 'blocked' && (
+            <div className={styles.settingsPanel}>
+              <h3>차단한 사용자 관리</h3>
+              <p>차단한 사용자는 내 게시글과 프로필 활동에서 숨겨집니다.</p>
+              <div className={styles.inlineForm}>
                 <input
-                  type="checkbox"
-                  checked={settings[key]}
-                  onChange={(event) => setSettings({ ...settings, [key]: event.target.checked })}
+                  aria-label="차단할 닉네임"
+                  placeholder="닉네임 입력"
+                  value={blockedInput}
+                  onChange={(event) => setBlockedInput(event.target.value)}
+                />
+                <PrimaryButton onClick={addBlockedUser}>차단 추가</PrimaryButton>
+              </div>
+              <div className={styles.mockList}>
+                {blockedUsers.length > 0 ? (
+                  blockedUsers.map((name) => (
+                    <div key={name} className={styles.listItem}>
+                      <span>
+                        <strong>{name}</strong>
+                        <small>차단됨</small>
+                      </span>
+                      <SecondaryButton
+                        onClick={() => {
+                          setBlockedUsers(blockedUsers.filter((item) => item !== name));
+                          setStatus(`${name}님 차단을 해제했어요.`);
+                        }}
+                      >
+                        차단 해제
+                      </SecondaryButton>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyInline}>차단한 사용자가 없어요.</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activePanel === 'download' && (
+            <div className={styles.settingsPanel}>
+              <h3>데이터 다운로드 옵션</h3>
+              <p>내 러닝 기록과 커뮤니티 활동 데이터를 선택해서 내보냅니다.</p>
+              <div className={styles.toggleList}>
+                {downloadSettingItems.map(({ key, label, description }) => (
+                  <label key={key} className={styles.settingToggle}>
+                    <span>
+                      <strong>{label}</strong>
+                      <small>{description}</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={downloadOptions[key]}
+                      onChange={(event) =>
+                        setDownloadOptions({ ...downloadOptions, [key]: event.target.checked })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+              <label className={styles.compactSearch}>
+                파일 형식
+                <select
+                  value={downloadOptions.format}
+                  onChange={(event) =>
+                    setDownloadOptions({ ...downloadOptions, format: event.target.value })
+                  }
+                >
+                  <option>JSON</option>
+                  <option>CSV</option>
+                </select>
+              </label>
+              <PrimaryButton
+                onClick={() =>
+                  setStatus(
+                    `${downloadOptions.format} 형식으로 ${downloadCount}개 데이터 묶음을 준비했어요.`,
+                  )
+                }
+              >
+                다운로드 준비
+              </PrimaryButton>
+            </div>
+          )}
+
+          {activePanel === 'version' && (
+            <div className={styles.settingsPanel}>
+              <h3>버전과 서비스 정보</h3>
+              <div className={styles.settingsPreview}>
+                <strong>Dallyrun Web 1.0.0</strong>
+                <span>마지막 업데이트 2026.05.02 · mock 프론트엔드 빌드</span>
+              </div>
+              <div className={styles.actions}>
+                <SecondaryButton onClick={() => setStatus('이용약관 mock 문서를 열었어요.')}>
+                  이용약관
+                </SecondaryButton>
+                <SecondaryButton
+                  onClick={() => setStatus('개인정보 처리방침 mock 문서를 열었어요.')}
+                >
+                  개인정보 처리방침
+                </SecondaryButton>
+              </div>
+            </div>
+          )}
+
+          {activePanel === 'logout' && (
+            <div className={styles.settingsPanel}>
+              <h3>로그아웃</h3>
+              <p>이 브라우저의 mock 세션만 종료합니다. 저장된 디자인 데이터는 유지됩니다.</p>
+              <PrimaryButton onClick={() => setStatus('mock 세션을 로그아웃 처리했어요.')}>
+                현재 브라우저에서 로그아웃
+              </PrimaryButton>
+            </div>
+          )}
+
+          {activePanel === 'delete' && (
+            <div className={styles.settingsPanel}>
+              <h3>회원탈퇴 확인</h3>
+              <p>실제 API 연결 전까지는 삭제하지 않고 확인 흐름만 표시합니다.</p>
+              <label className={styles.compactSearch}>
+                확인 문구
+                <input
+                  aria-label="회원탈퇴 확인 문구"
+                  placeholder="탈퇴 입력"
+                  value={deleteConfirm}
+                  onChange={(event) => setDeleteConfirm(event.target.value)}
                 />
               </label>
-            ))}
-          </div>
-        </Card>
-        <Card title="표시 설정">
-          <div className={styles.formGrid}>
-            <label>
-              측정 단위
-              <select
-                value={settings.unit}
-                onChange={(event) => setSettings({ ...settings, unit: event.target.value })}
+              <PrimaryButton
+                onClick={() => setStatus('회원탈퇴 mock 확인이 완료됐어요.')}
+                disabled={deleteConfirm !== '탈퇴'}
               >
-                <option>km</option>
-                <option>mile</option>
-              </select>
-            </label>
-            <label>
-              언어
-              <select
-                value={settings.language}
-                onChange={(event) => setSettings({ ...settings, language: event.target.value })}
-              >
-                <option>한국어</option>
-                <option>English</option>
-              </select>
-            </label>
-          </div>
-        </Card>
-        <Card title="계정 데이터">
-          <div className={styles.actions}>
-            <SecondaryButton onClick={() => setStatus('차단한 사용자가 없어요.')}>
-              차단한 사용자
-            </SecondaryButton>
-            <SecondaryButton onClick={() => setStatus('데이터 다운로드 파일을 준비했어요.')}>
-              데이터 다운로드
-            </SecondaryButton>
-            <SecondaryButton onClick={() => setStatus('현재 버전 1.0.0 mock입니다.')}>
-              버전/정보
-            </SecondaryButton>
-            <SecondaryButton onClick={() => setStatus('mock 세션을 로그아웃 처리했어요.')}>
-              로그아웃
-            </SecondaryButton>
-            <PrimaryButton
-              onClick={() => setStatus('회원탈퇴는 실제 API 연결 후 확인 단계가 필요해요.')}
-            >
-              회원탈퇴
-            </PrimaryButton>
-          </div>
+                회원탈퇴 확인
+              </PrimaryButton>
+            </div>
+          )}
+
           {status && <p className={styles.statusMessage}>{status}</p>}
         </Card>
       </div>

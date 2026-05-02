@@ -172,7 +172,8 @@ describe('Web design pages', () => {
     expect(screen.getByText('조건에 맞는 크루가 없어요')).toBeInTheDocument();
   });
 
-  it('프로필과 설정의 사용자 관리 항목을 렌더한다', () => {
+  it('프로필과 설정의 사용자 관리 항목을 렌더하고 상세 패널을 조작한다', async () => {
+    const user = userEvent.setup();
     const profileView = renderPage(<ProfilePage />);
 
     expect(screen.getByRole('heading', { level: 1, name: '프로필 · 계정' })).toBeInTheDocument();
@@ -185,6 +186,21 @@ describe('Web design pages', () => {
     expect(screen.getByRole('heading', { level: 1, name: '설정' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /데이터 다운로드/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /차단한 사용자/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /차단한 사용자/ }));
+    expect(
+      screen.getByRole('heading', { level: 3, name: '차단한 사용자 관리' }),
+    ).toBeInTheDocument();
+    await user.type(screen.getByLabelText('차단할 닉네임'), '불편한 러너');
+    await user.click(screen.getByRole('button', { name: '차단 추가' }));
+    expect(screen.getByText('불편한 러너')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /데이터 다운로드/ }));
+    expect(
+      screen.getByRole('heading', { level: 3, name: '데이터 다운로드 옵션' }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '다운로드 준비' }));
+    expect(screen.getByText(/JSON 형식/)).toBeInTheDocument();
   });
 
   it('알림 필터, 팔로워 탭, 빈 상태 카탈로그를 렌더한다', async () => {
