@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
   CommunityListPage,
@@ -10,8 +10,10 @@ import {
   CrewSearchPage,
   DashboardHomePage,
   FollowersPage,
+  GoalEditPage,
   GoalPage,
   NotificationsPage,
+  PostComposePage,
   PostDetailPage,
   ProfilePage,
   RecordsPage,
@@ -35,6 +37,10 @@ function renderRoute(element: ReactElement, path: string, route: string) {
 }
 
 describe('Web design pages', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it('대시보드 홈의 핵심 CTA와 목표 카드를 렌더한다', () => {
     renderPage(<DashboardHomePage />);
 
@@ -50,6 +56,19 @@ describe('Web design pages', () => {
     expect(screen.getByRole('heading', { level: 2, name: '5월 러닝 목표' })).toBeInTheDocument();
     expect(screen.getByText('72%')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '목표 수정' })).toBeInTheDocument();
+  });
+
+  it('목표 설정 폼은 입력값에 맞춰 미리보기를 갱신하고 저장한다', async () => {
+    const user = userEvent.setup();
+    renderPage(<GoalEditPage />);
+
+    await user.clear(screen.getByLabelText('목표 거리'));
+    await user.type(screen.getByLabelText('목표 거리'), '100');
+
+    expect(screen.getByText('58%')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '저장하기' }));
+    expect(screen.getByText('목표가 mock 데이터에 저장됐어요.')).toBeInTheDocument();
   });
 
   it('기록 분석 기간 탭을 클릭하면 통계 범위가 바뀐다', async () => {
@@ -87,13 +106,33 @@ describe('Web design pages', () => {
     expect(screen.getByRole('heading', { level: 2, name: '메모와 사진' })).toBeInTheDocument();
   });
 
-  it('게시글 상세에서 카테고리, 해시태그, 공유 카운터를 렌더한다', () => {
+  it('게시글 상세에서 좋아요, 공유, 댓글을 바로 반영한다', async () => {
+    const user = userEvent.setup();
     renderRoute(<PostDetailPage />, '/community/:postId', '/community/hangang-review');
 
     expect(screen.getByRole('heading', { level: 1, name: '게시글 상세' })).toBeInTheDocument();
     expect(screen.getByText('러닝 후기')).toBeInTheDocument();
     expect(screen.getAllByText('#한강러닝').length).toBeGreaterThan(0);
     expect(screen.getByText(/공유 2/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '좋아요 24' }));
+    expect(screen.getByRole('button', { name: '좋아요 25' })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('댓글 입력'), '저도 같이 달리고 싶어요');
+    await user.click(screen.getByRole('button', { name: '등록' }));
+    expect(screen.getByText('저도 같이 달리고 싶어요')).toBeInTheDocument();
+  });
+
+  it('게시글 작성 폼은 카테고리와 본문을 미리보기에 반영한다', async () => {
+    const user = userEvent.setup();
+    renderPage(<PostComposePage />);
+
+    await user.clear(screen.getByLabelText('제목'));
+    await user.type(screen.getByLabelText('제목'), '새 코스 공유');
+    await user.click(screen.getByRole('tab', { name: '코스 공유' }));
+
+    expect(screen.getByRole('link', { name: /새 코스 공유/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '코스 공유', selected: true })).toBeInTheDocument();
   });
 
   it('커뮤니티 목록에서 글 목록과 글쓰기 진입점을 먼저 렌더한다', () => {
@@ -134,12 +173,13 @@ describe('Web design pages', () => {
   });
 
   it('프로필과 설정의 사용자 관리 항목을 렌더한다', () => {
-    renderPage(<ProfilePage />);
+    const profileView = renderPage(<ProfilePage />);
 
     expect(screen.getByRole('heading', { level: 1, name: '프로필 · 계정' })).toBeInTheDocument();
     expect(screen.getByText('팔로워 248 · 팔로잉 187')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '프로필 편집' })).toBeInTheDocument();
 
+    profileView.unmount();
     renderPage(<SettingsPage />);
 
     expect(screen.getByRole('heading', { level: 1, name: '설정' })).toBeInTheDocument();
@@ -147,19 +187,25 @@ describe('Web design pages', () => {
     expect(screen.getByRole('button', { name: /차단한 사용자/ })).toBeInTheDocument();
   });
 
-  it('알림 필터, 팔로워 탭, 빈 상태 카탈로그를 렌더한다', () => {
-    renderPage(<NotificationsPage />);
+  it('알림 필터, 팔로워 탭, 빈 상태 카탈로그를 렌더한다', async () => {
+    const user = userEvent.setup();
+    const notificationView = renderPage(<NotificationsPage />);
 
     for (const filter of ['전체', '소셜', '크루', '뱃지', '팔로우']) {
       expect(screen.getAllByText(filter).length).toBeGreaterThan(0);
     }
 
-    renderPage(<FollowersPage />);
+    await user.click(screen.getByRole('tab', { name: '크루' }));
+    expect(screen.getByText('크루 일정이 변경됐어요')).toBeInTheDocument();
 
+    notificationView.unmount();
+    const followerView = renderPage(<FollowersPage />);
     expect(screen.getByRole('heading', { level: 1, name: '팔로워와 팔로잉' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: '팔로워 248명' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: '팔로잉 187명' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '팔로워 248', selected: true })).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: '팔로잉 4' }));
+    expect(screen.getByText('정원오빠')).toBeInTheDocument();
 
+    followerView.unmount();
     renderPage(<StatesPage />);
 
     expect(screen.getByText('러닝 기록 0개')).toBeInTheDocument();

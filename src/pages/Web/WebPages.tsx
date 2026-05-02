@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import WebShell from '@/components/WebShell/WebShell';
 import {
@@ -19,7 +19,17 @@ import {
   profile,
   runRecords,
 } from '@/mock/dallyrun';
-import type { NotificationItem, Post, Recruit, RunRecord } from '@/types/dallyrun';
+import type {
+  Goal,
+  NotificationCategory,
+  NotificationItem,
+  Post,
+  PostCategory,
+  PrivacyScope,
+  Recruit,
+  RecruitType,
+  RunRecord,
+} from '@/types/dallyrun';
 
 import styles from './WebPages.module.css';
 
@@ -64,6 +74,38 @@ function SecondaryLink({ to, children }: { to: string; children: ReactNode }) {
   );
 }
 
+function PrimaryButton({
+  children,
+  onClick,
+  type = 'button',
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit';
+}) {
+  return (
+    <button type={type} className={styles.primaryButton} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({
+  children,
+  onClick,
+  type = 'button',
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit';
+}) {
+  return (
+    <button type={type} className={styles.secondaryButton} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
 function StatCard({
   label,
   value,
@@ -84,6 +126,69 @@ function StatCard({
     </div>
   );
 }
+
+type StoredStateUpdater<T> = T | ((current: T) => T);
+
+function readStoredState<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStoredState<T>(key: string, value: T) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Mock state is best-effort; UI still works in memory when storage is unavailable.
+  }
+}
+
+function useStoredState<T>(
+  key: string,
+  fallback: T,
+): [T, (nextValue: StoredStateUpdater<T>) => void] {
+  const [value, setValue] = useState<T>(() => readStoredState(key, fallback));
+
+  const updateValue = (nextValue: StoredStateUpdater<T>) => {
+    setValue((current) => {
+      const resolved =
+        typeof nextValue === 'function' ? (nextValue as (current: T) => T)(current) : nextValue;
+      writeStoredState(key, resolved);
+      return resolved;
+    });
+  };
+
+  return [value, updateValue];
+}
+
+const goalStorageKey = 'dallyrun-web-goal';
+const postsStorageKey = 'dallyrun-web-posts';
+const profileStorageKey = 'dallyrun-web-profile';
+const settingsStorageKey = 'dallyrun-web-settings';
+
+function useWebGoal() {
+  return useStoredState<Goal>(goalStorageKey, goal);
+}
+
+function useWebPosts() {
+  return useStoredState<Post[]>(postsStorageKey, posts);
+}
+
+function useWebProfile() {
+  return useStoredState(profileStorageKey, profile);
+}
+
+const postCategories: PostCategory[] = ['러닝 후기', '코스 공유', '초보 Q&A', '장비'];
+const recruitTypes: RecruitType[] = ['정기런', '번개런', '대회'];
+const notificationFilters: NotificationCategory[] = ['전체', '소셜', '크루', '뱃지', '팔로우'];
+const privacyOptions: Array<{ value: PrivacyScope; label: string; description: string }> = [
+  { value: 'PUBLIC', label: '전체 공개', description: '모든 러너가 볼 수 있어요' },
+  { value: 'FOLLOWERS', label: '팔로워만', description: '나를 팔로우한 사람만 볼 수 있어요' },
+  { value: 'PRIVATE', label: '비공개', description: '나만 볼 수 있어요' },
+];
 
 function ProgressBar({ value }: { value: number }) {
   return (
@@ -234,7 +339,9 @@ const crewFilterGroups: Array<{
 ];
 
 export function DashboardHomePage() {
-  const progress = Math.round((goal.currentKm / goal.targetKm) * 100);
+  const [currentGoal] = useWebGoal();
+  const [webPosts] = useWebPosts();
+  const progress = Math.round((currentGoal.currentKm / currentGoal.targetKm) * 100);
   const latestRun = getRunRecord('hangang-night-8k');
   const primaryCrew = getCrew('hangang-crew');
   return (
@@ -274,8 +381,8 @@ export function DashboardHomePage() {
           <strong className={styles.bigNumber}>{progress}%</strong>
           <ProgressBar value={progress} />
           <p>
-            {goal.targetKm}km 중 {goal.currentKm}km 완료. 남은 거리{' '}
-            {(goal.targetKm - goal.currentKm).toFixed(1)}km
+            {currentGoal.targetKm}km 중 {currentGoal.currentKm}km 완료. 남은 거리{' '}
+            {(currentGoal.targetKm - currentGoal.currentKm).toFixed(1)}km
           </p>
           <SecondaryLink to="/goals/edit">목표 수정</SecondaryLink>
         </Card>
@@ -292,7 +399,7 @@ export function DashboardHomePage() {
             <h2>커뮤니티</h2>
             <PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>
           </div>
-          {posts.map((post) => (
+          {webPosts.slice(0, 3).map((post) => (
             <Link key={post.id} to={`/community/${post.id}`} className={styles.feedPreviewItem}>
               <span className={styles.feedAvatar}>달</span>
               <span>
@@ -434,8 +541,9 @@ export function RunningDetailPage() {
 }
 
 export function GoalPage() {
-  const progress = Math.round((goal.currentKm / goal.targetKm) * 100);
-  const remainingKm = Math.max(goal.targetKm - goal.currentKm, 0).toFixed(1);
+  const [currentGoal] = useWebGoal();
+  const progress = Math.round((currentGoal.currentKm / currentGoal.targetKm) * 100);
+  const remainingKm = Math.max(currentGoal.targetKm - currentGoal.currentKm, 0).toFixed(1);
   const heatmapValues = [
     72, 44, 0, 88, 60, 38, 0, 92, 55, 28, 76, 0, 66, 82, 40, 0, 58, 94, 36, 64, 48,
   ];
@@ -448,26 +556,26 @@ export function GoalPage() {
     >
       <section className={styles.goalHero}>
         <div>
-          <Chip>{goal.period} 목표</Chip>
-          <h2>{goal.title}</h2>
+          <Chip>{currentGoal.period} 목표</Chip>
+          <h2>{currentGoal.title}</h2>
           <p>
-            {goal.startDate} - {goal.endDate}
+            {currentGoal.startDate} - {currentGoal.endDate}
           </p>
           <div className={styles.goalProgressSummary}>
             <strong>{progress}%</strong>
             <span>
-              {goal.targetKm}km 중 {goal.currentKm}km 완료 · 남은 거리 {remainingKm}km
+              {currentGoal.targetKm}km 중 {currentGoal.currentKm}km 완료 · 남은 거리 {remainingKm}km
             </span>
           </div>
           <ProgressBar value={progress} />
         </div>
         <div className={styles.goalHeroStats}>
           <span>
-            <strong>{goal.currentKm}km</strong>
+            <strong>{currentGoal.currentKm}km</strong>
             현재 거리
           </span>
           <span>
-            <strong>{goal.targetKm}km</strong>
+            <strong>{currentGoal.targetKm}km</strong>
             목표 거리
           </span>
           <span>
@@ -512,45 +620,100 @@ export function GoalPage() {
 }
 
 export function GoalEditPage() {
+  const navigate = useNavigate();
+  const [storedGoal, setStoredGoal] = useWebGoal();
+  const [draft, setDraft] = useState<Goal>(storedGoal);
+  const [status, setStatus] = useState('');
+  const previewProgress = Math.min(
+    100,
+    Math.round((draft.currentKm / Math.max(Number(draft.targetKm), 1)) * 100),
+  );
+  const remainingKm = Math.max(Number(draft.targetKm) - draft.currentKm, 0).toFixed(1);
+
+  const saveGoal = () => {
+    setStoredGoal(draft);
+    setStatus('목표가 mock 데이터에 저장됐어요.');
+  };
+
   return (
     <WebShell
       title="목표 설정"
       subtitle="주간·월간 거리 목표를 직접 입력하고 수정합니다."
-      action={<PrimaryLink to="/goals">저장하기</PrimaryLink>}
+      action={
+        <>
+          <SecondaryLink to="/goals">목표 보기</SecondaryLink>
+          <PrimaryButton onClick={saveGoal}>저장하기</PrimaryButton>
+        </>
+      }
     >
       <div className={styles.twoColumn}>
         <Card title="거리 목표">
           <div className={styles.formGrid}>
             <label>
               목표 이름
-              <input defaultValue={goal.title} />
+              <input
+                value={draft.title}
+                onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+              />
             </label>
             <label>
               기간
-              <select defaultValue={goal.period}>
+              <select
+                value={draft.period}
+                onChange={(event) =>
+                  setDraft({ ...draft, period: event.target.value as Goal['period'] })
+                }
+              >
                 <option>주간</option>
                 <option>월간</option>
               </select>
             </label>
             <label>
               목표 거리
-              <input defaultValue={goal.targetKm} />
+              <input
+                type="number"
+                min="1"
+                value={draft.targetKm}
+                onChange={(event) =>
+                  setDraft({ ...draft, targetKm: Number(event.target.value || 0) })
+                }
+              />
             </label>
             <label>
               시작일
-              <input defaultValue={goal.startDate} />
+              <input
+                value={draft.startDate}
+                onChange={(event) => setDraft({ ...draft, startDate: event.target.value })}
+              />
             </label>
             <label>
               종료일
-              <input defaultValue={goal.endDate} />
+              <input
+                value={draft.endDate}
+                onChange={(event) => setDraft({ ...draft, endDate: event.target.value })}
+              />
             </label>
           </div>
+          {status && <p className={styles.statusMessage}>{status}</p>}
         </Card>
         <Card title="목표 미리보기">
-          <strong className={styles.bigNumber}>72%</strong>
-          <ProgressBar value={72} />
-          <p>80km 중 57.6km 완료</p>
+          <strong className={styles.bigNumber}>{previewProgress}%</strong>
+          <ProgressBar value={previewProgress} />
+          <p>
+            {draft.targetKm}km 중 {draft.currentKm}km 완료 · 남은 거리 {remainingKm}km
+          </p>
           <p>러닝 12회 · 평균 페이스 5'34&quot;</p>
+          <div className={styles.actions}>
+            <SecondaryButton onClick={() => setDraft(storedGoal)}>되돌리기</SecondaryButton>
+            <PrimaryButton
+              onClick={() => {
+                saveGoal();
+                navigate('/goals');
+              }}
+            >
+              저장 후 보기
+            </PrimaryButton>
+          </div>
         </Card>
       </div>
     </WebShell>
@@ -558,15 +721,30 @@ export function GoalEditPage() {
 }
 
 export function BadgeListPage() {
+  const [statusFilter, setStatusFilter] = useState<'전체' | '획득' | '미획득'>('전체');
+  const filteredBadges =
+    statusFilter === '전체' ? badges : badges.filter((badge) => badge.status === statusFilter);
+
   return (
     <WebShell title="뱃지 전체" subtitle="획득한 뱃지와 아직 남은 조건을 한눈에 봅니다.">
-      <div className={styles.tabs}>
-        <Chip>전체</Chip>
-        <Chip tone="green">획득</Chip>
-        <Chip tone="slate">미획득</Chip>
+      <div className={styles.tabList} role="tablist" aria-label="뱃지 상태 필터">
+        {(['전체', '획득', '미획득'] as const).map((label) => (
+          <button
+            key={label}
+            type="button"
+            role="tab"
+            aria-selected={statusFilter === label}
+            className={`${styles.tabButton} ${
+              statusFilter === label ? styles.tabButtonActive : ''
+            }`}
+            onClick={() => setStatusFilter(label)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
       <div className={styles.cardGrid}>
-        {badges.map((badge) => (
+        {filteredBadges.map((badge) => (
           <Link key={badge.id} to={`/badges/${badge.id}`} className={styles.badgeCard}>
             <span aria-hidden="true">{badge.status === '획득' ? '★' : '☆'}</span>
             <strong>{badge.title}</strong>
@@ -613,36 +791,110 @@ export function BadgeDetailPage() {
 }
 
 export function PostComposePage() {
+  const navigate = useNavigate();
+  const [webPosts, setWebPosts] = useWebPosts();
+  const [title, setTitle] = useState('한강 야간런 후기');
+  const [body, setBody] = useState(
+    '오늘 한강에서 8.2km 달렸어요. 페이스가 안정적이라 기분 좋은 러닝이었습니다.',
+  );
+  const [category, setCategory] = useState<PostCategory>('러닝 후기');
+  const [hashtagInput, setHashtagInput] = useState('#한강런 #야간런 #8km');
+  const [attachedRunId, setAttachedRunId] = useState(runRecords[0]?.id ?? '');
+  const [status, setStatus] = useState('');
+  const hashtags = hashtagInput
+    .split(/\s+/)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .map((tag) => (tag.startsWith('#') ? tag : `#${tag}`))
+    .slice(0, 6);
+  const attachedRun = getRunRecord(attachedRunId);
+  const previewPost: Post = {
+    id: 'preview',
+    title: title || '제목을 입력하세요',
+    author: profile.nickname,
+    crew: '개인 피드',
+    timeAgo: '방금',
+    category,
+    body: body || '내용을 입력하면 미리보기에 바로 반영됩니다.',
+    hashtags,
+    attachedRunId,
+    likeCount: 0,
+    commentCount: 0,
+    shareCount: 0,
+    comments: [],
+  };
+
+  const publishPost = () => {
+    const nextPost = {
+      ...previewPost,
+      id: `post-${Date.now()}`,
+      title: previewPost.title.trim(),
+      body: previewPost.body.trim(),
+    };
+    setWebPosts([nextPost, ...webPosts.filter((post) => post.id !== nextPost.id)]);
+    setStatus('게시글이 mock 피드에 등록됐어요.');
+    navigate(`/community/${nextPost.id}`);
+  };
+
   return (
     <WebShell
       title="게시글 작성"
       subtitle="러닝 기록, 사진, 해시태그를 넣어 게시글을 작성합니다."
-      action={<PrimaryLink to="/community/hangang-review">게시하기</PrimaryLink>}
+      action={<PrimaryButton onClick={publishPost}>게시하기</PrimaryButton>}
     >
       <div className={styles.twoColumn}>
         <Card title="새 게시글">
           <div className={styles.formGrid}>
             <label>
               제목
-              <input defaultValue="한강 야간런 후기" />
+              <input value={title} onChange={(event) => setTitle(event.target.value)} />
             </label>
             <label>
               내용
-              <textarea defaultValue="오늘 한강에서 8.2km 달렸어요. 페이스가 안정적이라 기분 좋은 러닝이었습니다." />
+              <textarea value={body} onChange={(event) => setBody(event.target.value)} />
+            </label>
+            <label>
+              해시태그
+              <input
+                value={hashtagInput}
+                onChange={(event) => setHashtagInput(event.target.value)}
+                placeholder="#한강러닝 #야간런"
+              />
+            </label>
+            <label>
+              첨부 기록
+              <select
+                value={attachedRunId}
+                onChange={(event) => setAttachedRunId(event.target.value)}
+              >
+                {runRecords.map((record) => (
+                  <option key={record.id} value={record.id}>
+                    {record.title}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
-          <small>84/500</small>
-          <div className={styles.tabs}>
-            <Chip>러닝 후기</Chip>
-            <Chip tone="slate">코스 공유</Chip>
-            <Chip tone="slate">초보 Q&A</Chip>
-            <Chip tone="slate">장비</Chip>
+          <small>{body.length}/500</small>
+          <div className={styles.tabList} role="tablist" aria-label="게시글 카테고리">
+            {postCategories.map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={category === item}
+                className={`${styles.tabButton} ${category === item ? styles.tabButtonActive : ''}`}
+                onClick={() => setCategory(item)}
+              >
+                {item}
+              </button>
+            ))}
           </div>
-          <p>#한강런 #야간런 #8km</p>
-          <RunListItem record={getRunRecord('hangang-night-8k')} />
+          {status && <p className={styles.statusMessage}>{status}</p>}
+          <RunListItem record={attachedRun} />
         </Card>
         <Card title="미리보기">
-          <PostListItem post={getPost('hangang-review')} />
+          <PostListItem post={previewPost} />
           <Card title="@ 자동완성">
             <p>@runner_mingi 민지</p>
             <p>@hangang_su 수현</p>
@@ -654,10 +906,20 @@ export function PostComposePage() {
 }
 
 export function CommunityListPage() {
-  const categoryCounts = ['러닝 후기', '코스 공유', '초보 Q&A', '장비'].map((category) => ({
+  const [webPosts] = useWebPosts();
+  const [selectedCategory, setSelectedCategory] = useState<'전체' | PostCategory>('전체');
+  const [sortMode, setSortMode] = useState<'latest' | 'popular'>('latest');
+  const categoryCounts = postCategories.map((category) => ({
     category,
-    count: posts.filter((post) => post.category === category).length,
+    count: webPosts.filter((post) => post.category === category).length,
   }));
+  const filteredPosts = webPosts
+    .filter((post) => selectedCategory === '전체' || post.category === selectedCategory)
+    .sort((left, right) =>
+      sortMode === 'popular'
+        ? right.likeCount + right.commentCount - (left.likeCount + left.commentCount)
+        : 0,
+    );
 
   return (
     <WebShell
@@ -673,15 +935,15 @@ export function CommunityListPage() {
         </div>
         <div className={styles.communityHeroStats}>
           <span>
-            <strong>{posts.length}</strong>
+            <strong>{webPosts.length}</strong>
             게시글
           </span>
           <span>
-            <strong>{posts.reduce((sum, post) => sum + post.commentCount, 0)}</strong>
+            <strong>{webPosts.reduce((sum, post) => sum + post.commentCount, 0)}</strong>
             댓글
           </span>
           <span>
-            <strong>{posts.reduce((sum, post) => sum + post.likeCount, 0)}</strong>
+            <strong>{webPosts.reduce((sum, post) => sum + post.likeCount, 0)}</strong>
             좋아요
           </span>
         </div>
@@ -690,31 +952,68 @@ export function CommunityListPage() {
         <Card>
           <div className={styles.panelHeader}>
             <h2>전체 글</h2>
-            <div className={styles.tabs}>
-              <Chip>최신순</Chip>
-              <Chip tone="slate">인기순</Chip>
+            <div className={styles.tabList} role="tablist" aria-label="게시글 정렬">
+              {[
+                ['latest', '최신순'],
+                ['popular', '인기순'],
+              ].map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="tab"
+                  aria-selected={sortMode === mode}
+                  className={`${styles.tabButton} ${
+                    sortMode === mode ? styles.tabButtonActive : ''
+                  }`}
+                  onClick={() => setSortMode(mode as typeof sortMode)}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
-          {posts.map((post) => (
-            <PostListItem key={post.id} post={post} />
-          ))}
+          <div className={styles.tabs}>
+            {(['전체', ...postCategories] as Array<'전체' | PostCategory>).map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`${styles.filterButton} ${
+                  selectedCategory === item ? styles.filterButtonActive : ''
+                }`}
+                aria-pressed={selectedCategory === item}
+                onClick={() => setSelectedCategory(item)}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+          {filteredPosts.length > 0 ? (
+            filteredPosts.map((post) => <PostListItem key={post.id} post={post} />)
+          ) : (
+            <div className={styles.emptyInline}>조건에 맞는 글이 없어요.</div>
+          )}
         </Card>
         <div className={styles.sideStack}>
           <Card title="카테고리">
             <div className={styles.categoryList}>
               {categoryCounts.map((item) => (
-                <span key={item.category}>
+                <button
+                  key={item.category}
+                  type="button"
+                  className={styles.categoryButton}
+                  onClick={() => setSelectedCategory(item.category)}
+                >
                   <strong>{item.category}</strong>
                   <small>{item.count}개 글</small>
-                </span>
+                </button>
               ))}
             </div>
           </Card>
           <Card title="인기 해시태그">
             <div className={styles.tabs}>
-              <Chip tone="slate">#한강러닝</Chip>
-              <Chip tone="slate">#야간런</Chip>
-              <Chip tone="slate">#코스공유</Chip>
+              <SecondaryLink to="/tags/한강러닝">#한강러닝</SecondaryLink>
+              <SecondaryLink to="/tags/야간런">#야간런</SecondaryLink>
+              <SecondaryLink to="/tags/코스공유">#코스공유</SecondaryLink>
             </div>
           </Card>
           <Card title="활발한 크루">
@@ -740,8 +1039,41 @@ export function CommunityListPage() {
 
 export function PostDetailPage() {
   const { postId } = useParams();
-  const post = getPost(postId);
+  const [webPosts, setWebPosts] = useWebPosts();
+  const post = webPosts.find((item) => item.id === postId) ?? getPost(postId);
+  const [commentText, setCommentText] = useState('');
+  const [hasLiked, setHasLiked] = useState(false);
+  const [shareStatus, setShareStatus] = useState('');
   const run = post.attachedRunId ? getRunRecord(post.attachedRunId) : null;
+
+  const updatePost = (nextPost: Post) => {
+    setWebPosts((currentPosts) =>
+      currentPosts.map((item) => (item.id === nextPost.id ? nextPost : item)),
+    );
+  };
+
+  const toggleLike = () => {
+    const nextLiked = !hasLiked;
+    setHasLiked(nextLiked);
+    updatePost({ ...post, likeCount: Math.max(0, post.likeCount + (nextLiked ? 1 : -1)) });
+  };
+
+  const addComment = () => {
+    const trimmed = commentText.trim();
+    if (!trimmed) return;
+    updatePost({
+      ...post,
+      comments: [trimmed, ...post.comments],
+      commentCount: post.commentCount + 1,
+    });
+    setCommentText('');
+  };
+
+  const sharePost = () => {
+    updatePost({ ...post, shareCount: post.shareCount + 1 });
+    setShareStatus('공유 카운트가 mock으로 반영됐어요.');
+  };
+
   return (
     <WebShell
       title="게시글 상세"
@@ -773,19 +1105,37 @@ export function PostDetailPage() {
           <p className={styles.postDetailBody}>{post.body}</p>
           {run && <RunListItem record={run} />}
           <p className={styles.postDetailMetrics}>
-            <strong>좋아요 {post.likeCount}</strong>
+            <button type="button" onClick={toggleLike}>
+              좋아요 {post.likeCount}
+            </button>
             <strong>댓글 {post.commentCount}</strong>
-            <strong>공유 {post.shareCount}</strong>
+            <button type="button" onClick={sharePost}>
+              공유 {post.shareCount}
+            </button>
           </p>
-          <input aria-label="댓글 입력" placeholder="댓글을 입력하세요" />
+          {shareStatus && <p className={styles.statusMessage}>{shareStatus}</p>}
+          <div className={styles.inlineForm}>
+            <input
+              aria-label="댓글 입력"
+              placeholder="댓글을 입력하세요"
+              value={commentText}
+              onChange={(event) => setCommentText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') addComment();
+              }}
+            />
+            <PrimaryButton onClick={addComment}>등록</PrimaryButton>
+          </div>
           <div className={styles.commentList}>
-            {post.comments.map((comment) => (
-              <p key={comment}>{comment}</p>
-            ))}
+            {post.comments.length > 0 ? (
+              post.comments.map((comment) => <p key={comment}>{comment}</p>)
+            ) : (
+              <div className={styles.emptyInline}>첫 댓글을 남겨보세요.</div>
+            )}
           </div>
         </Card>
         <Card title="같은 크루 글">
-          {posts
+          {webPosts
             .filter((item) => item.id !== post.id)
             .map((item) => (
               <PostListItem key={item.id} post={item} />
@@ -936,6 +1286,7 @@ export function CrewSearchPage() {
 export function CrewDetailPage() {
   const { crewId } = useParams();
   const crew = getCrew(crewId);
+  const [activeTab, setActiveTab] = useState<'모집글' | '멤버' | '소개'>('모집글');
   return (
     <WebShell
       title="크루 상세"
@@ -951,76 +1302,171 @@ export function CrewDetailPage() {
             <Chip tone="slate">평균 {crew.averagePace}</Chip>
             <Chip tone="slate">{crew.activityTime}</Chip>
           </div>
-          <div className={styles.tabs}>
-            <Chip>모집글</Chip>
-            <Chip tone="slate">멤버</Chip>
-            <Chip tone="slate">소개</Chip>
+          <div className={styles.tabList} role="tablist" aria-label="크루 상세 탭">
+            {(['모집글', '멤버', '소개'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                className={`${styles.tabButton} ${activeTab === tab ? styles.tabButtonActive : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
         </div>
       </Card>
-      <div className={styles.twoColumn}>
+      {activeTab === '모집글' && (
         <Card title="모집글">
-          {crew.recruits.map((recruit) => (
-            <RecruitItem key={recruit.id} recruit={recruit} crewId={crew.id} />
-          ))}
+          {crew.recruits.length > 0 ? (
+            crew.recruits.map((recruit) => (
+              <RecruitItem key={recruit.id} recruit={recruit} crewId={crew.id} />
+            ))
+          ) : (
+            <div className={styles.emptyInline}>아직 열린 모집글이 없어요.</div>
+          )}
         </Card>
+      )}
+      {activeTab === '멤버' && (
         <Card title="멤버">
           {crew.members.map((member) => (
-            <p key={member}>{member}</p>
+            <div key={member} className={styles.listItem}>
+              <strong>{member}</strong>
+              <small>크루 멤버</small>
+            </div>
           ))}
         </Card>
-      </div>
+      )}
+      {activeTab === '소개' && (
+        <Card title="크루 소개">
+          <p>{crew.description}</p>
+          <div className={styles.crewMetaGrid}>
+            <span>
+              <strong>{crew.area}</strong>
+              활동 지역
+            </span>
+            <span>
+              <strong>{crew.activityTime}</strong>
+              활동 시간
+            </span>
+            <span>
+              <strong>{crew.level}</strong>
+              레벨
+            </span>
+          </div>
+        </Card>
+      )}
     </WebShell>
   );
 }
 
 export function RecruitComposePage() {
-  const { crewId } = useParams();
-  const crew = getCrew(crewId);
+  const [title, setTitle] = useState('내일 오후 7시 한강 정모');
+  const [schedule, setSchedule] = useState('2026.05.01 금 19:00');
+  const [place, setPlace] = useState('여의도공원');
+  const [pace, setPace] = useState("6'00 페이스");
+  const [participants, setParticipants] = useState('20명');
+  const [distance, setDistance] = useState('8km');
+  const [description, setDescription] = useState(
+    '편하게 달릴 수 있는 분 환영해요. 집결 후 가벼운 스트레칭을 하고 함께 달립니다.',
+  );
+  const [type, setType] = useState<RecruitType>('정기런');
+  const [shouldNotify, setShouldNotify] = useState(true);
+  const [status, setStatus] = useState('');
+
   return (
     <WebShell
       title="모집글 작성"
       subtitle="일정, 장소, 페이스, 인원, 모임 유형과 푸시 알림 여부를 설정합니다."
-      action={<PrimaryLink to={`/crews/${crew.id}`}>게시하기</PrimaryLink>}
+      action={
+        <PrimaryButton onClick={() => setStatus('모집글이 mock 상태로 작성됐어요.')}>
+          게시하기
+        </PrimaryButton>
+      }
     >
-      <Card title="모집 정보">
-        <div className={styles.formGrid}>
-          <label>
-            제목
-            <input defaultValue="내일 오후 7시 한강 정모" />
+      <div className={styles.twoColumn}>
+        <Card title="모집 정보">
+          <div className={styles.formGrid}>
+            <label>
+              제목
+              <input value={title} onChange={(event) => setTitle(event.target.value)} />
+            </label>
+            <label>
+              일정
+              <input value={schedule} onChange={(event) => setSchedule(event.target.value)} />
+            </label>
+            <label>
+              장소
+              <input value={place} onChange={(event) => setPlace(event.target.value)} />
+            </label>
+            <label>
+              페이스
+              <input value={pace} onChange={(event) => setPace(event.target.value)} />
+            </label>
+            <label>
+              인원
+              <input
+                value={participants}
+                onChange={(event) => setParticipants(event.target.value)}
+              />
+            </label>
+            <label>
+              거리
+              <input value={distance} onChange={(event) => setDistance(event.target.value)} />
+            </label>
+          </div>
+          <textarea value={description} onChange={(event) => setDescription(event.target.value)} />
+          <small>{description.length}/300</small>
+          <div className={styles.tabList} role="tablist" aria-label="모집 유형">
+            {recruitTypes.map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={type === item}
+                className={`${styles.tabButton} ${type === item ? styles.tabButtonActive : ''}`}
+                onClick={() => setType(item)}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+          <label className={styles.toggle}>
+            <input
+              type="checkbox"
+              checked={shouldNotify}
+              onChange={(event) => setShouldNotify(event.target.checked)}
+            />{' '}
+            크루 멤버에게 푸시 알림 보내기
           </label>
-          <label>
-            일정
-            <input defaultValue="2026.05.01 금 19:00" />
-          </label>
-          <label>
-            장소
-            <input defaultValue="여의도공원" />
-          </label>
-          <label>
-            페이스
-            <input defaultValue="6'00 페이스" />
-          </label>
-          <label>
-            인원
-            <input defaultValue="20명" />
-          </label>
-          <label>
-            거리
-            <input defaultValue="8km" />
-          </label>
-        </div>
-        <textarea defaultValue="편하게 달릴 수 있는 분 환영해요. 집결 후 가벼운 스트레칭을 하고 함께 달립니다." />
-        <small>62/300</small>
-        <div className={styles.tabs}>
-          <Chip>정기런</Chip>
-          <Chip tone="slate">번개런</Chip>
-          <Chip tone="slate">대회</Chip>
-        </div>
-        <label className={styles.toggle}>
-          <input type="checkbox" defaultChecked /> 크루 멤버에게 푸시 알림 보내기
-        </label>
-      </Card>
+          {status && <p className={styles.statusMessage}>{status}</p>}
+        </Card>
+        <Card title="모집글 미리보기">
+          <div className={styles.recruitCard}>
+            <span className={styles.recruitDate}>
+              <strong>{schedule.split(' ')[1] ?? '일정'}</strong>
+              <small>{schedule.split(' ')[2] ?? ''}</small>
+            </span>
+            <span className={styles.recruitContent}>
+              <span className={styles.recruitChips}>
+                <Chip tone={getRecruitTone(type)}>{type}</Chip>
+                <Chip tone="slate">{distance}</Chip>
+              </span>
+              <strong>{title || '제목을 입력하세요'}</strong>
+              <small>
+                {place} · {pace} · {shouldNotify ? '푸시 알림 전송' : '푸시 알림 없음'}
+              </small>
+            </span>
+            <span className={styles.recruitStatus}>
+              <strong>{participants}</strong>
+              <small>모집 인원</small>
+            </span>
+          </div>
+          <p>{description}</p>
+        </Card>
+      </div>
     </WebShell>
   );
 }
@@ -1028,11 +1474,21 @@ export function RecruitComposePage() {
 export function RecruitDetailPage() {
   const { crewId, recruitId } = useParams();
   const { crew, recruit } = getRecruit(crewId, recruitId);
+  const [isJoined, setIsJoined] = useState(false);
+  const participantText = useMemo(() => {
+    if (!isJoined) return recruit.participants;
+    return recruit.participants.replace(/^(\d+)/, (value) => String(Number(value) + 1));
+  }, [isJoined, recruit.participants]);
+
   return (
     <WebShell
       title="모집글 상세"
       subtitle="모집글 정보와 참여 상태를 확인합니다."
-      action={<PrimaryLink to={`/crews/${crew.id}`}>참여하기</PrimaryLink>}
+      action={
+        <PrimaryButton onClick={() => setIsJoined((current) => !current)}>
+          {isJoined ? '참여 취소' : '참여하기'}
+        </PrimaryButton>
+      }
     >
       <Card className={styles.detailHero}>
         <div>
@@ -1044,7 +1500,7 @@ export function RecruitDetailPage() {
             <Chip tone="slate">{recruit.place}</Chip>
             <Chip tone="slate">{recruit.distance}</Chip>
             <Chip tone="slate">{recruit.pace}</Chip>
-            <Chip tone="slate">{recruit.participants}</Chip>
+            <Chip tone="slate">{participantText}</Chip>
           </div>
         </div>
       </Card>
@@ -1053,6 +1509,12 @@ export function RecruitDetailPage() {
           <p>{recruit.description}</p>
         </Card>
         <Card title="참여 러너">
+          {isJoined && (
+            <div className={styles.listItem}>
+              <strong>{profile.nickname}</strong>
+              <small>참여 완료</small>
+            </div>
+          )}
           {crew.members.map((member) => (
             <p key={member}>{member}</p>
           ))}
@@ -1063,6 +1525,7 @@ export function RecruitDetailPage() {
 }
 
 export function ProfilePage() {
+  const [webProfile] = useWebProfile();
   return (
     <WebShell
       title="프로필 · 계정"
@@ -1073,26 +1536,26 @@ export function ProfilePage() {
           JM
         </div>
         <div className={styles.profileHeroContent}>
-          <h2>{profile.nickname}</h2>
-          <p>{profile.bio}</p>
+          <h2>{webProfile.nickname}</h2>
+          <p>{webProfile.bio}</p>
           <Link to="/followers" className={styles.inlineLink}>
-            팔로워 {profile.followerCount} · 팔로잉 {profile.followingCount}
+            팔로워 {webProfile.followerCount} · 팔로잉 {webProfile.followingCount}
           </Link>
           <div className={styles.profileHeroStats}>
             <span>
-              <strong>{profile.totalDistance}</strong>
+              <strong>{webProfile.totalDistance}</strong>
               누적 거리
             </span>
             <span>
-              <strong>{profile.runCount}</strong>
+              <strong>{webProfile.runCount}</strong>
               러닝
             </span>
             <span>
-              <strong>{profile.averagePace}</strong>
+              <strong>{webProfile.averagePace}</strong>
               평균 페이스
             </span>
             <span>
-              <strong>{profile.badgeCount}</strong>
+              <strong>{webProfile.badgeCount}</strong>
               뱃지
             </span>
           </div>
@@ -1104,18 +1567,17 @@ export function ProfilePage() {
       <div className={styles.twoColumn}>
         <Card title="공개 범위">
           <div className={styles.privacyList}>
-            <span className={styles.privacyItem}>
-              <strong>전체 공개</strong>
-              모든 러너가 볼 수 있어요
-            </span>
-            <span className={styles.privacyItem}>
-              <strong>팔로워만</strong>
-              나를 팔로우한 사람만
-            </span>
-            <span className={styles.privacyItem}>
-              <strong>비공개</strong>
-              나만 볼 수 있어요
-            </span>
+            {privacyOptions.map((option) => (
+              <span
+                key={option.value}
+                className={`${styles.privacyItem} ${
+                  webProfile.privacy === option.value ? styles.privacyItemActive : ''
+                }`}
+              >
+                <strong>{option.label}</strong>
+                {option.description}
+              </span>
+            ))}
           </div>
         </Card>
         <Card title="내 크루">
@@ -1132,33 +1594,63 @@ export function ProfilePage() {
 }
 
 export function ProfileEditPage() {
+  const [webProfile, setWebProfile] = useWebProfile();
+  const [nickname, setNickname] = useState(webProfile.nickname);
+  const [bio, setBio] = useState(webProfile.bio);
+  const [privacy, setPrivacy] = useState<PrivacyScope>(webProfile.privacy);
+  const [status, setStatus] = useState('');
+  const saveProfile = () => {
+    setWebProfile({ ...webProfile, nickname, bio, privacy });
+    setStatus('프로필이 mock 데이터에 저장됐어요.');
+  };
+
   return (
     <WebShell
       title="프로필 편집"
       subtitle="닉네임, 이미지, 소개, 공개 범위를 수정합니다."
-      action={<PrimaryLink to="/profile">저장하기</PrimaryLink>}
+      action={
+        <>
+          <SecondaryLink to="/profile">프로필 보기</SecondaryLink>
+          <PrimaryButton onClick={saveProfile}>저장하기</PrimaryButton>
+        </>
+      }
     >
       <div className={styles.twoColumn}>
         <Card title="프로필 정보">
           <div className={styles.formGrid}>
             <label>
               닉네임
-              <input defaultValue={profile.nickname} />
+              <input value={nickname} onChange={(event) => setNickname(event.target.value)} />
             </label>
             <label>
               한 줄 소개
-              <input defaultValue="매일 한강에서 달려요" />
+              <input value={bio} onChange={(event) => setBio(event.target.value)} />
             </label>
           </div>
-          <div className={styles.tabs}>
-            <Chip>전체 공개</Chip>
-            <Chip tone="slate">팔로워만</Chip>
-            <Chip tone="slate">비공개</Chip>
+          <div className={styles.tabList} role="tablist" aria-label="프로필 공개 범위">
+            {privacyOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="tab"
+                aria-selected={privacy === option.value}
+                className={`${styles.tabButton} ${
+                  privacy === option.value ? styles.tabButtonActive : ''
+                }`}
+                onClick={() => setPrivacy(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
+          {status && <p className={styles.statusMessage}>{status}</p>}
         </Card>
         <Card title="프로필 미리보기">
-          <h2>{profile.nickname}</h2>
-          <p>{profile.bio}</p>
+          <h2>{nickname || '닉네임'}</h2>
+          <p>{bio || '한 줄 소개를 입력하세요.'}</p>
+          <Chip>
+            {privacyOptions.find((option) => option.value === privacy)?.label ?? '전체 공개'}
+          </Chip>
         </Card>
       </div>
     </WebShell>
@@ -1166,79 +1658,231 @@ export function ProfileEditPage() {
 }
 
 export function SettingsPage() {
-  const settings = [
-    { label: '전체 공개', description: '모든 러너가 내 프로필과 기록을 볼 수 있어요' },
-    { label: '팔로워만', description: '나를 팔로우한 러너에게만 공개해요' },
-    { label: '비공개', description: '내 기록과 활동을 나만 볼 수 있어요' },
-    { label: '측정 단위', description: '거리와 페이스 단위를 km 기준으로 표시해요' },
-    { label: '언어', description: '한국어와 영어 표시를 관리해요' },
-    { label: '차단한 사용자', description: '차단 목록을 확인하고 해제할 수 있어요' },
-    { label: '데이터 다운로드', description: '내 기록과 계정 데이터를 내려받아요' },
-    { label: '버전/정보', description: '서비스 버전과 약관 정보를 확인해요' },
-    { label: '로그아웃', description: '현재 브라우저에서 계정을 로그아웃해요' },
-    { label: '회원탈퇴', description: '계정 삭제 전 보관 데이터를 확인해요' },
+  const [webProfile, setWebProfile] = useWebProfile();
+  const [settings, setSettings] = useStoredState(settingsStorageKey, {
+    unit: 'km',
+    language: '한국어',
+    notificationSocial: true,
+    notificationCrew: true,
+    notificationBadge: true,
+  });
+  const [status, setStatus] = useState('');
+  const notificationSettingItems: Array<{
+    key: 'notificationSocial' | 'notificationCrew' | 'notificationBadge';
+    label: string;
+    description: string;
+  }> = [
+    { key: 'notificationSocial', label: '소셜 알림', description: '좋아요, 댓글, 팔로우 알림' },
+    { key: 'notificationCrew', label: '크루 알림', description: '모집글과 일정 변경 알림' },
+    { key: 'notificationBadge', label: '뱃지 알림', description: '새 뱃지 획득 알림' },
   ];
+
   return (
     <WebShell title="설정" subtitle="공개 범위, 알림, 단위, 언어, 데이터와 계정을 관리합니다.">
-      <Card title="계정 설정">
-        <div className={styles.settingsList}>
-          {settings.map((item) => (
-            <button key={item.label} type="button">
-              {item.label}
-              <span>{item.description}</span>
-            </button>
-          ))}
-        </div>
-      </Card>
+      <div className={styles.twoColumn}>
+        <Card title="공개 범위">
+          <div className={styles.settingsSegment}>
+            {privacyOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`${styles.settingChoice} ${
+                  webProfile.privacy === option.value ? styles.settingChoiceActive : ''
+                }`}
+                onClick={() => {
+                  setWebProfile({ ...webProfile, privacy: option.value });
+                  setStatus(`${option.label}로 공개 범위를 변경했어요.`);
+                }}
+              >
+                <strong>{option.label}</strong>
+                <span>{option.description}</span>
+              </button>
+            ))}
+          </div>
+        </Card>
+        <Card title="알림">
+          <div className={styles.toggleList}>
+            {notificationSettingItems.map(({ key, label, description }) => (
+              <label key={key} className={styles.settingToggle}>
+                <span>
+                  <strong>{label}</strong>
+                  <small>{description}</small>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={settings[key]}
+                  onChange={(event) => setSettings({ ...settings, [key]: event.target.checked })}
+                />
+              </label>
+            ))}
+          </div>
+        </Card>
+        <Card title="표시 설정">
+          <div className={styles.formGrid}>
+            <label>
+              측정 단위
+              <select
+                value={settings.unit}
+                onChange={(event) => setSettings({ ...settings, unit: event.target.value })}
+              >
+                <option>km</option>
+                <option>mile</option>
+              </select>
+            </label>
+            <label>
+              언어
+              <select
+                value={settings.language}
+                onChange={(event) => setSettings({ ...settings, language: event.target.value })}
+              >
+                <option>한국어</option>
+                <option>English</option>
+              </select>
+            </label>
+          </div>
+        </Card>
+        <Card title="계정 데이터">
+          <div className={styles.actions}>
+            <SecondaryButton onClick={() => setStatus('차단한 사용자가 없어요.')}>
+              차단한 사용자
+            </SecondaryButton>
+            <SecondaryButton onClick={() => setStatus('데이터 다운로드 파일을 준비했어요.')}>
+              데이터 다운로드
+            </SecondaryButton>
+            <SecondaryButton onClick={() => setStatus('현재 버전 1.0.0 mock입니다.')}>
+              버전/정보
+            </SecondaryButton>
+            <SecondaryButton onClick={() => setStatus('mock 세션을 로그아웃 처리했어요.')}>
+              로그아웃
+            </SecondaryButton>
+            <PrimaryButton
+              onClick={() => setStatus('회원탈퇴는 실제 API 연결 후 확인 단계가 필요해요.')}
+            >
+              회원탈퇴
+            </PrimaryButton>
+          </div>
+          {status && <p className={styles.statusMessage}>{status}</p>}
+        </Card>
+      </div>
     </WebShell>
   );
 }
 
 export function FollowersPage() {
+  const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
+  const [query, setQuery] = useState('');
+  const [followedUsers, setFollowedUsers] = useState<string[]>(following);
+  const sourceUsers = activeTab === 'followers' ? followers : followedUsers;
+  const filteredUsers = sourceUsers.filter((name) =>
+    name.toLowerCase().includes(query.trim().toLowerCase()),
+  );
+  const toggleFollow = (name: string) => {
+    setFollowedUsers((current) =>
+      current.includes(name) ? current.filter((item) => item !== name) : [...current, name],
+    );
+  };
+
   return (
     <WebShell
       title="팔로워와 팔로잉"
       subtitle="탭으로 팔로워와 팔로잉을 분리해 검색하고 관리합니다."
     >
-      <div className={styles.twoColumn}>
-        <Card title={`팔로워 ${profile.followerCount}명`}>
-          {followers.map((name) => (
+      <Card>
+        <div className={styles.panelHeader}>
+          <div className={styles.tabList} role="tablist" aria-label="팔로워 탭">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'followers'}
+              className={`${styles.tabButton} ${
+                activeTab === 'followers' ? styles.tabButtonActive : ''
+              }`}
+              onClick={() => setActiveTab('followers')}
+            >
+              팔로워 {profile.followerCount}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'following'}
+              className={`${styles.tabButton} ${
+                activeTab === 'following' ? styles.tabButtonActive : ''
+              }`}
+              onClick={() => setActiveTab('following')}
+            >
+              팔로잉 {followedUsers.length}
+            </button>
+          </div>
+          <label className={styles.compactSearch}>
+            <span>검색</span>
+            <input
+              aria-label="사용자 검색"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="닉네임 검색"
+            />
+          </label>
+        </div>
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((name) => (
             <div key={name} className={styles.listItem}>
-              <strong>{name}</strong>
-              <small>팔로워 · 서울</small>
-              <Chip>팔로우</Chip>
+              <span>
+                <strong>{name}</strong>
+                <small>{activeTab === 'followers' ? '팔로워 · 서울' : '팔로잉 중 · 한강'}</small>
+              </span>
+              <button
+                type="button"
+                className={`${styles.filterButton} ${
+                  followedUsers.includes(name) ? styles.filterButtonActive : ''
+                }`}
+                onClick={() => toggleFollow(name)}
+              >
+                {followedUsers.includes(name) ? '팔로잉' : '팔로우'}
+              </button>
             </div>
-          ))}
-        </Card>
-        <Card title={`팔로잉 ${profile.followingCount}명`}>
-          {following.map((name) => (
-            <div key={name} className={styles.listItem}>
-              <strong>{name}</strong>
-              <small>팔로잉 중 · 한강</small>
-              <Chip tone="slate">팔로잉</Chip>
-            </div>
-          ))}
-        </Card>
-      </div>
+          ))
+        ) : (
+          <div className={styles.emptyInline}>검색 결과가 없어요.</div>
+        )}
+      </Card>
     </WebShell>
   );
 }
 
 export function NotificationsPage() {
+  const [activeFilter, setActiveFilter] = useState<NotificationCategory>('전체');
+  const [readIds, setReadIds] = useState<string[]>([]);
+  const filteredNotifications =
+    activeFilter === '전체'
+      ? notifications
+      : notifications.filter((item) => item.category === activeFilter);
+
   return (
     <WebShell
       title="알림"
       subtitle="최근 알림 전체를 확인합니다. 카테고리별로 빠르게 좁혀볼 수 있습니다."
+      action={
+        <SecondaryButton onClick={() => setReadIds(notifications.map((item) => item.id))}>
+          모두 읽음
+        </SecondaryButton>
+      }
     >
-      <div className={styles.tabs}>
-        {['전체', '소셜', '크루', '뱃지', '팔로우'].map((label, index) => (
-          <Chip key={label} tone={index === 0 ? 'blue' : 'slate'}>
+      <div className={styles.tabList} role="tablist" aria-label="알림 필터">
+        {notificationFilters.map((label) => (
+          <button
+            key={label}
+            type="button"
+            role="tab"
+            aria-selected={activeFilter === label}
+            className={`${styles.tabButton} ${activeFilter === label ? styles.tabButtonActive : ''}`}
+            onClick={() => setActiveFilter(label)}
+          >
             {label}
-          </Chip>
+          </button>
         ))}
       </div>
       <Card>
-        {notifications.map((item: NotificationItem) => (
+        {filteredNotifications.map((item: NotificationItem) => (
           <div key={item.id} className={styles.listItem}>
             <Chip
               tone={
@@ -1251,9 +1895,24 @@ export function NotificationsPage() {
               <strong>{item.title}</strong>
               <small>{item.body}</small>
             </span>
-            <small>{item.timeAgo}</small>
+            <button
+              type="button"
+              className={styles.filterButton}
+              onClick={() =>
+                setReadIds((current) =>
+                  current.includes(item.id)
+                    ? current.filter((id) => id !== item.id)
+                    : [...current, item.id],
+                )
+              }
+            >
+              {readIds.includes(item.id) ? '읽음' : item.timeAgo}
+            </button>
           </div>
         ))}
+        {filteredNotifications.length === 0 && (
+          <div className={styles.emptyInline}>이 카테고리에는 알림이 없어요.</div>
+        )}
       </Card>
     </WebShell>
   );
@@ -1261,22 +1920,37 @@ export function NotificationsPage() {
 
 export function HashtagPage() {
   const { tag } = useParams();
+  const [webPosts] = useWebPosts();
   const tagLabel = `#${tag ?? '한강러닝'}`;
+  const relatedTags = ['#한강러닝', '#야간런', '#5K', '#코스공유', '#8km'];
+  const filteredPosts = webPosts.filter((post) => post.hashtags.includes(tagLabel));
+
   return (
     <WebShell title={tagLabel} subtitle="해시태그가 붙은 피드 게시물을 모아봅니다.">
       <Card>
         <div className={styles.tabs}>
-          {['#한강러닝', '#야간런', '#5K', '#코스공유'].map((item) => (
-            <Chip key={item} tone={item === tagLabel ? 'blue' : 'slate'}>
+          {relatedTags.map((item) => (
+            <Link
+              key={item}
+              to={`/tags/${encodeURIComponent(item.replace('#', ''))}`}
+              className={`${styles.filterButton} ${
+                item === tagLabel ? styles.filterButtonActive : ''
+              }`}
+            >
               {item}
-            </Chip>
+            </Link>
           ))}
         </div>
       </Card>
       <div className={styles.cardGrid}>
-        {posts.map((post) => (
-          <PostListItem key={post.id} post={post} />
-        ))}
+        {filteredPosts.length > 0 ? (
+          filteredPosts.map((post) => <PostListItem key={post.id} post={post} />)
+        ) : (
+          <div className={styles.emptyCard}>
+            <strong>태그가 붙은 글이 없어요</strong>
+            <span>다른 관련 태그를 눌러보세요.</span>
+          </div>
+        )}
       </div>
     </WebShell>
   );

@@ -218,6 +218,12 @@
   font-weight: 900;
 }
 
+.privacyItemActive {
+  border-color: #a9c3ff;
+  background: #eaf2ff;
+  color: #1f5eff;
+}
+
 .actions,
 .tabs {
   display: flex;
@@ -269,8 +275,11 @@
   align-items: center;
   justify-content: center;
   min-height: 40px;
+  border: 0;
   padding: 0 14px;
   border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
   font-size: 14px;
   line-height: 18px;
   font-weight: 700;
@@ -592,16 +601,27 @@
   margin: 18px 0;
 }
 
-.postDetailMetrics strong {
+.postDetailMetrics strong,
+.postDetailMetrics button {
   min-height: 48px;
   display: grid;
   place-items: center;
+  border: 0;
   border-radius: 14px;
   background: #f1f6ff;
   color: #1f5eff;
+  cursor: pointer;
+  font: inherit;
   font-size: 13px;
   line-height: 18px;
   font-weight: 900;
+}
+
+.inlineForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
 }
 
 .commentList {
@@ -616,6 +636,23 @@
   border-radius: 14px;
   background: #f8fbff;
   color: #334155;
+}
+
+.statusMessage,
+.emptyInline {
+  margin: 14px 0 0;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: #eaf2ff;
+  color: #1f5eff;
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 800;
+}
+
+.emptyInline {
+  background: #f8fbff;
+  color: #5f6f82;
 }
 
 .goalHero {
@@ -833,6 +870,7 @@
 }
 
 .categoryList span,
+.categoryButton,
 .compactCrewItem {
   display: flex;
   align-items: center;
@@ -843,6 +881,19 @@
   border: 1px solid #e3eaf3;
   border-radius: 16px;
   background: #f9fbff;
+}
+
+.categoryButton {
+  width: 100%;
+  border: 1px solid #e3eaf3;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.categoryButton:hover {
+  border-color: #a9c3ff;
+  background: #eaf2ff;
 }
 
 .categoryList strong,
@@ -1162,6 +1213,15 @@ textarea {
   resize: vertical;
 }
 
+.compactSearch {
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .badgeCard,
 .emptyCard {
   min-height: 148px;
@@ -1220,6 +1280,9 @@ textarea {
 }
 
 .filterButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 34px;
   border: 0;
   border-radius: 999px;
@@ -1457,6 +1520,67 @@ textarea {
   font-size: 12px;
   line-height: 17px;
   font-weight: 500;
+}
+
+.settingsSegment,
+.toggleList {
+  display: grid;
+  gap: 12px;
+}
+
+.settingChoice,
+.settingToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 68px;
+  border: 1px solid #e3eaf3;
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: #ffffff;
+  color: #102033;
+  font: inherit;
+  text-align: left;
+}
+
+.settingChoice {
+  cursor: pointer;
+}
+
+.settingChoiceActive {
+  border-color: #a9c3ff;
+  background: #eaf2ff;
+}
+
+.settingChoice strong,
+.settingChoice span,
+.settingToggle strong,
+.settingToggle small {
+  display: block;
+}
+
+.settingChoice strong,
+.settingToggle strong {
+  color: #102033;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 900;
+}
+
+.settingChoice span,
+.settingToggle small {
+  margin-top: 3px;
+  color: #5f6f82;
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 700;
+}
+
+.settingToggle input {
+  width: 20px;
+  min-height: 20px;
+  accent-color: #2f6bff;
 }
 
 .emptyCard {

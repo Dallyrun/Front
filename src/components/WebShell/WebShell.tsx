@@ -1,8 +1,9 @@
-import { NavLink } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 
 import logoIcon from '@/asset/dallyrunicon.png';
-import { profile } from '@/mock/dallyrun';
+import { badges, crews, notifications, posts, profile, runRecords } from '@/mock/dallyrun';
 
 import styles from './WebShell.module.css';
 
@@ -24,6 +25,61 @@ const navItems = [
 ];
 
 function WebShell({ title, subtitle, action, children }: WebShellProps) {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const searchResults = useMemo(() => {
+    if (!normalizedQuery) return [];
+
+    return [
+      ...runRecords.map((record) => ({
+        type: '기록',
+        title: record.title,
+        meta: `${record.place} · ${record.distance}`,
+        to: `/records/${record.id}`,
+      })),
+      ...posts.map((post) => ({
+        type: '커뮤니티',
+        title: post.title,
+        meta: `${post.category} · ${post.author}`,
+        to: `/community/${post.id}`,
+      })),
+      ...crews.map((crew) => ({
+        type: '크루',
+        title: crew.name,
+        meta: `${crew.area} · ${crew.activityTime}`,
+        to: `/crews/${crew.id}`,
+      })),
+      ...badges.map((badge) => ({
+        type: '뱃지',
+        title: badge.title,
+        meta: `${badge.status} · ${badge.category}`,
+        to: `/badges/${badge.id}`,
+      })),
+    ]
+      .filter((item) =>
+        [item.title, item.meta, item.type].some((value) =>
+          value.toLowerCase().includes(normalizedQuery),
+        ),
+      )
+      .slice(0, 6);
+  }, [normalizedQuery]);
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const [firstResult] = searchResults;
+    if (firstResult) {
+      setSearchQuery('');
+      navigate(firstResult.to);
+      return;
+    }
+
+    if (normalizedQuery) {
+      navigate(`/tags/${encodeURIComponent(searchQuery.trim().replace(/^#/, ''))}`);
+    }
+  };
+
   return (
     <div className={styles.shell}>
       <aside className={styles.sidebar} aria-label="주요 메뉴">
@@ -64,13 +120,60 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
             <p>{subtitle}</p>
           </div>
           <div className={styles.headerTools}>
-            <label className={styles.search}>
-              <span aria-hidden="true">⌕</span>
-              <input placeholder="기록·크루 검색" aria-label="기록·크루 검색" />
-            </label>
-            <NavLink to="/notifications" className={styles.iconButton} aria-label="알림">
-              N
-            </NavLink>
+            <form className={styles.searchWrap} onSubmit={handleSearchSubmit}>
+              <label className={styles.search}>
+                <span aria-hidden="true">⌕</span>
+                <input
+                  placeholder="기록·크루 검색"
+                  aria-label="기록·크루 검색"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                />
+              </label>
+              {normalizedQuery && (
+                <div className={styles.searchResults} role="listbox">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((item) => (
+                      <Link key={`${item.type}-${item.to}`} to={item.to}>
+                        <strong>{item.title}</strong>
+                        <span>
+                          {item.type} · {item.meta}
+                        </span>
+                      </Link>
+                    ))
+                  ) : (
+                    <span className={styles.emptySearch}>
+                      검색 결과가 없어요. Enter로 태그 검색
+                    </span>
+                  )}
+                </div>
+              )}
+            </form>
+            <div className={styles.notificationWrap}>
+              <button
+                type="button"
+                className={styles.iconButton}
+                aria-label="알림"
+                aria-expanded={isNotificationOpen}
+                onClick={() => setIsNotificationOpen((current) => !current)}
+              >
+                N
+              </button>
+              {isNotificationOpen && (
+                <div className={styles.notificationPanel}>
+                  <strong>최근 알림</strong>
+                  {notifications.slice(0, 5).map((item) => (
+                    <Link key={item.id} to="/notifications">
+                      <small>{item.category}</small>
+                      <span>{item.title}</span>
+                    </Link>
+                  ))}
+                  <Link to="/notifications" className={styles.notificationMore}>
+                    전체 알림 보기
+                  </Link>
+                </div>
+              )}
+            </div>
             <NavLink to="/profile" className={styles.topAvatar} aria-label="프로필">
               JM
             </NavLink>
