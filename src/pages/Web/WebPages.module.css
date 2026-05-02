@@ -1121,30 +1121,6 @@
   margin: 0;
 }
 
-.homeSectionNote {
-  display: grid;
-  gap: 6px;
-  margin: 16px 0;
-  padding: 16px;
-  border: 1px solid #d8e5ff;
-  border-radius: 16px;
-  background: #f5f9ff;
-}
-
-.homeSectionNote strong {
-  color: #102033;
-  font-size: 14px;
-  line-height: 18px;
-  font-weight: 900;
-}
-
-.homeSectionNote span {
-  color: #5f6f82;
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 700;
-}
-
 .feedPreviewItem,
 .scheduleItem {
   display: flex;

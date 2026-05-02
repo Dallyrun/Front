@@ -364,40 +364,64 @@ const crewFilterGroups: Array<{
 
 export function DashboardHomePage() {
   const [currentGoal] = useWebGoal();
-  const [webPosts] = useWebPosts();
-  const [webCrews] = useWebCrews();
   const progress = Math.min(
     100,
     Math.round((currentGoal.currentKm / Math.max(currentGoal.targetKm, 1)) * 100),
   );
   const remainingKm = Math.max(currentGoal.targetKm - currentGoal.currentKm, 0).toFixed(1);
   const latestRun = getRunRecord('hangang-night-8k');
-  const primaryCrew = getWebCrew(webCrews, 'hangang-crew');
-  const nextRecruit = primaryCrew.recruits[0];
+  const homeFeedPreviews = [
+    {
+      author: '달리는 수현',
+      meta: '한강 러닝크루 · 23분 전',
+      body: '8.2km 야간런 완료. 마지막 1km 페이스가 가장 좋았어요.',
+      to: '/community/hangang-review',
+    },
+    {
+      author: '정원오빠',
+      meta: '뱃지 · 댓글 12',
+      body: '100km 클럽 뱃지를 달성했어요. 다음 목표는 꾸준히 150km입니다.',
+      to: '/badges/10k-club',
+    },
+  ];
+  const homeCrewSchedules = [
+    {
+      day: '토요일',
+      title: '잠실 새벽 6K 조깅',
+      meta: '06:30 · 잠실나루 · 6\'30" 페이스 · 8/12명',
+      to: '/crews/hangang-crew/recruits/friday-8k',
+    },
+    {
+      day: '일요일',
+      title: '성수 한강 회복런',
+      meta: '19:00 · 서울숲 · 7\'00" 페이스 · 5/10명',
+      to: '/crews/seongsu-morning',
+    },
+  ];
 
   return (
     <WebShell
-      title="홈"
-      subtitle="앱 홈과 같은 핵심 요약을 웹 화면에 맞춰 넓게 보여줍니다."
+      title="러닝 인사이트 홈"
+      subtitle="오늘의 기록, 목표, 커뮤니티 소식을 한 화면에서 확인합니다."
       action={
         <>
           <SecondaryLink to="/records">기록 보기</SecondaryLink>
-          <PrimaryLink to="/goals">목표 보기</PrimaryLink>
+          <PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>
         </>
       }
     >
       <div className={styles.heroGrid}>
         <Card className={styles.heroCard}>
           <div>
-            <Chip tone="softBlue">오늘의 러닝</Chip>
-            <h2>{profile.nickname}님, 최근 러닝 흐름이 좋아요</h2>
+            <Chip tone="softBlue">오늘 러닝 상태</Chip>
+            <h2>어제 10K 완주 기록이 반영됐어요</h2>
             <p>
-              최근 기록은 {latestRun.distance}, 이번 {currentGoal.period} 목표는 {progress}% 달성
-              중입니다. 앱 홈처럼 목표, 기록, 크루, 커뮤니티를 같은 우선순위로 정리했습니다.
+              최근 7일 누적 거리는 18.4km입니다. 기록 상세에서 구간별 페이스와 메모를 확인하고,
+              커뮤니티에 러닝 후기를 남길 수 있습니다.
             </p>
             <div className={styles.actions}>
               <PrimaryLink to={`/records/${latestRun.id}`}>최근 기록 보기</PrimaryLink>
-              <SecondaryLink to="/goals">목표 확인</SecondaryLink>
+              <SecondaryLink to="/community/new">피드 글쓰기</SecondaryLink>
             </div>
           </div>
           <div className={styles.routePreview} aria-label="최근 러닝 요약">
@@ -412,45 +436,33 @@ export function DashboardHomePage() {
           <strong className={styles.bigNumber}>{progress}%</strong>
           <ProgressBar value={progress} />
           <p>
-            {currentGoal.targetKm}km 중 {currentGoal.currentKm}km 완료. 남은 거리 {remainingKm}km
+            {currentGoal.targetKm}km 중 {currentGoal.currentKm}km 완료
+          </p>
+          <p>
+            이번 달 남은 목표까지 {remainingKm}km가 남았습니다. 목표 수정에서 주간·월간 거리를 직접
+            조정할 수 있습니다.
           </p>
           <SecondaryLink to="/goals/edit">목표 수정</SecondaryLink>
         </Card>
       </div>
       <div className={styles.homeStatGrid}>
-        <StatCard label="누적 거리" value={profile.totalDistance} caption="프로필과 동일 지표" />
-        <StatCard label="러닝" value={`${profile.runCount}회`} caption="완료한 러닝" />
-        <StatCard
-          label="평균 페이스"
-          value={profile.averagePace}
-          caption="전체 기록 평균"
-          tone="green"
-        />
-        <StatCard label="뱃지" value={`${profile.badgeCount}개`} caption="획득한 뱃지" />
+        <StatCard label="이번 주 거리" value="18.4 km" caption="지난주보다 +12%" />
+        <StatCard label="평균 페이스" value="5'42&quot;" caption="최근 5회 평균" tone="green" />
+        <StatCard label="연속 러닝" value="7일" caption="이번 주 3회 기록" />
+        <StatCard label="신규 PR" value="10K" caption="04.28 달성" />
       </div>
-      <Card>
-        <div className={styles.panelHeader}>
-          <h2>최근 러닝 기록</h2>
-          <SecondaryLink to="/records">전체 기록 보기</SecondaryLink>
-        </div>
-        {runRecords.slice(0, 3).map((record) => (
-          <RunListItem key={record.id} record={record} />
-        ))}
-      </Card>
       <div className={styles.twoColumn}>
         <Card>
           <div className={styles.panelHeader}>
-            <h2>커뮤니티 피드</h2>
+            <h2>커뮤니티</h2>
             <PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>
           </div>
-          {webPosts.slice(0, 3).map((post) => (
-            <Link key={post.id} to={`/community/${post.id}`} className={styles.feedPreviewItem}>
+          {homeFeedPreviews.map((post) => (
+            <Link key={post.body} to={post.to} className={styles.feedPreviewItem}>
               <span className={styles.feedAvatar}>달</span>
               <span>
                 <strong>{post.author}</strong>
-                <small>
-                  {post.crew} · {post.timeAgo}
-                </small>
+                <small>{post.meta}</small>
                 <em>{post.body}</em>
               </span>
             </Link>
@@ -458,40 +470,15 @@ export function DashboardHomePage() {
         </Card>
         <Card>
           <div className={styles.panelHeader}>
-            <h2>내 크루</h2>
+            <h2>이번 주 크루 일정</h2>
             <SecondaryLink to="/crews">크루 찾기</SecondaryLink>
           </div>
-          <Link to={`/crews/${primaryCrew.id}`} className={styles.listItem}>
-            <span>
-              <strong>{primaryCrew.name}</strong>
-              <small>
-                {primaryCrew.area} · 멤버 {primaryCrew.memberCount}명 · {primaryCrew.activityTime}
-              </small>
-            </span>
-            <Chip tone="softBlue">{primaryCrew.averagePace}</Chip>
-          </Link>
-          {nextRecruit && (
-            <div className={styles.homeSectionNote}>
-              <strong>다가오는 모임</strong>
+          {homeCrewSchedules.map((schedule) => (
+            <Link key={schedule.title} to={schedule.to} className={styles.scheduleItem}>
+              <Chip tone="softBlue">{schedule.day}</Chip>
               <span>
-                {nextRecruit.schedule} · {nextRecruit.place} · {nextRecruit.participants}
-              </span>
-            </div>
-          )}
-          {primaryCrew.recruits.slice(0, 2).map((recruit) => (
-            <Link
-              key={recruit.id}
-              to={`/crews/${primaryCrew.id}/recruits/${recruit.id}`}
-              className={styles.scheduleItem}
-            >
-              <Chip tone={recruit.type === '정기런' ? 'green' : 'softBlue'}>
-                {recruit.schedule.split(' ')[0]}
-              </Chip>
-              <span>
-                <strong>{recruit.title}</strong>
-                <small>
-                  {recruit.schedule} · {recruit.place} · {recruit.pace} · {recruit.participants}
-                </small>
+                <strong>{schedule.title}</strong>
+                <small>{schedule.meta}</small>
               </span>
             </Link>
           ))}
@@ -1840,6 +1827,15 @@ export function ProfilePage() {
           ))}
         </Card>
       </div>
+      <Card title="계정 설정">
+        <div className={styles.goalManagement}>
+          <span>
+            <strong>설정에서 계정을 관리할 수 있어요</strong>
+            알림, 측정 단위, 언어, 데이터 다운로드, 로그아웃과 회원탈퇴를 설정합니다.
+          </span>
+          <PrimaryLink to="/settings">설정 열기</PrimaryLink>
+        </div>
+      </Card>
     </WebShell>
   );
 }
