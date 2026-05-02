@@ -29,6 +29,7 @@ const routeCases = [
   ['/goals/edit', /목표 설정/],
   ['/badges', /뱃지 전체/],
   ['/badges/10k-club', /뱃지 상세/],
+  ['/community', /커뮤니티/],
   ['/community/new', /게시글 작성/],
   ['/community/hangang-review', /게시글 상세/],
   ['/tags/한강러닝', /#한강러닝/],

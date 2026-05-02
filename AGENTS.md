@@ -168,6 +168,7 @@ src/
 | `/goals/edit`                        | `pages/Web/GoalEditPage`                | 목표 설정 / 수정                                |
 | `/badges`                            | `pages/Web/BadgeListPage`               | 뱃지 전체                                       |
 | `/badges/:badgeId`                   | `pages/Web/BadgeDetailPage`             | 뱃지 상세                                       |
+| `/community`                         | `pages/Web/CommunityListPage`           | 커뮤니티 피드 목록                              |
 | `/community/new`                     | `pages/Web/PostComposePage`             | 피드 게시글 작성                                |
 | `/community/:postId`                 | `pages/Web/PostDetailPage`              | 피드 게시글 상세                                |
 | `/tags/:tag`                         | `pages/Web/HashtagPage`                 | 해시태그 검색 결과                              |

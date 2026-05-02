@@ -7,6 +7,7 @@ import SignupPage from '@/pages/Signup/SignupPage';
 import {
   BadgeDetailPage,
   BadgeListPage,
+  CommunityListPage,
   CrewDetailPage,
   CrewSearchPage,
   DashboardHomePage,
@@ -43,6 +44,7 @@ function App() {
         <Route path="/goals/edit" element={<GoalEditPage />} />
         <Route path="/badges" element={<BadgeListPage />} />
         <Route path="/badges/:badgeId" element={<BadgeDetailPage />} />
+        <Route path="/community" element={<CommunityListPage />} />
         <Route path="/community/new" element={<PostComposePage />} />
         <Route path="/community/:postId" element={<PostDetailPage />} />
         <Route path="/tags/:tag" element={<HashtagPage />} />

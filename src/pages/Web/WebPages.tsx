@@ -499,6 +499,91 @@ export function PostComposePage() {
   );
 }
 
+export function CommunityListPage() {
+  const categoryCounts = ['러닝 후기', '코스 공유', '초보 Q&A', '장비'].map((category) => ({
+    category,
+    count: posts.filter((post) => post.category === category).length,
+  }));
+
+  return (
+    <WebShell
+      title="커뮤니티"
+      subtitle="러너들의 기록, 코스, 질문과 후기를 한곳에서 둘러봅니다."
+      action={<PrimaryLink to="/community/new">피드 글쓰기</PrimaryLink>}
+    >
+      <section className={styles.communityHero}>
+        <div>
+          <Chip>전체 피드</Chip>
+          <h2>오늘 올라온 러닝 이야기</h2>
+          <p>기록을 붙인 후기부터 코스 공유까지, 관심 있는 글을 눌러 자세히 확인해요.</p>
+        </div>
+        <div className={styles.communityHeroStats}>
+          <span>
+            <strong>{posts.length}</strong>
+            게시글
+          </span>
+          <span>
+            <strong>{posts.reduce((sum, post) => sum + post.commentCount, 0)}</strong>
+            댓글
+          </span>
+          <span>
+            <strong>{posts.reduce((sum, post) => sum + post.likeCount, 0)}</strong>
+            좋아요
+          </span>
+        </div>
+      </section>
+      <div className={styles.twoColumn}>
+        <Card>
+          <div className={styles.panelHeader}>
+            <h2>전체 글</h2>
+            <div className={styles.tabs}>
+              <Chip>최신순</Chip>
+              <Chip tone="slate">인기순</Chip>
+            </div>
+          </div>
+          {posts.map((post) => (
+            <PostListItem key={post.id} post={post} />
+          ))}
+        </Card>
+        <div className={styles.sideStack}>
+          <Card title="카테고리">
+            <div className={styles.categoryList}>
+              {categoryCounts.map((item) => (
+                <span key={item.category}>
+                  <strong>{item.category}</strong>
+                  <small>{item.count}개 글</small>
+                </span>
+              ))}
+            </div>
+          </Card>
+          <Card title="인기 해시태그">
+            <div className={styles.tabs}>
+              <Chip tone="slate">#한강러닝</Chip>
+              <Chip tone="slate">#야간런</Chip>
+              <Chip tone="slate">#코스공유</Chip>
+            </div>
+          </Card>
+          <Card title="활발한 크루">
+            {crews.map((crew) => (
+              <Link key={crew.id} to={`/crews/${crew.id}`} className={styles.compactCrewItem}>
+                <span className={styles.crewAvatar} aria-hidden="true">
+                  {crew.name.slice(0, 1)}
+                </span>
+                <span>
+                  <strong>{crew.name}</strong>
+                  <small>
+                    {crew.memberCount}명 · {crew.activityTime}
+                  </small>
+                </span>
+              </Link>
+            ))}
+          </Card>
+        </div>
+      </div>
+    </WebShell>
+  );
+}
+
 export function PostDetailPage() {
   const { postId } = useParams();
   const post = getPost(postId);

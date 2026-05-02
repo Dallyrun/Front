@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import {
+  CommunityListPage,
   CrewDetailPage,
   DashboardHomePage,
   FollowersPage,
@@ -56,6 +57,15 @@ describe('Web design pages', () => {
     expect(screen.getByText('러닝 후기')).toBeInTheDocument();
     expect(screen.getAllByText('#한강러닝').length).toBeGreaterThan(0);
     expect(screen.getByText(/공유 2/)).toBeInTheDocument();
+  });
+
+  it('커뮤니티 목록에서 글 목록과 글쓰기 진입점을 먼저 렌더한다', () => {
+    renderPage(<CommunityListPage />);
+
+    expect(screen.getByRole('heading', { level: 1, name: '커뮤니티' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '전체 글' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '피드 글쓰기' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /한강 야간런 후기/ })).toBeInTheDocument();
   });
 
   it('크루 상세에서 모집글 탭과 모집글 만들기 CTA를 렌더한다', () => {
