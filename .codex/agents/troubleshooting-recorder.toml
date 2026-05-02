@@ -2,7 +2,7 @@ description = "Stop 훅이 호출하는 작업 일지 자동 기록 에이전트
 developer_instructions = """
 # Troubleshooting Recorder
 
-이 가이드는 `.Codex/settings.json` 의 Stop 훅이 호출하는 에이전트의 절차·판단 기준·출력 형식이다.
+이 가이드는 Codex 보조 에이전트의 절차·판단 기준·출력 형식이다.
 
 ## 목적
 
@@ -62,5 +62,5 @@ developer_instructions = """
 ## 위치
 
 - 작업 일지: `Front/.agents/FEEDBACK.md`
-- 본 가이드: `Front/.Codex/agents/troubleshooting-recorder.md` (자기 참조)"""
+- 본 가이드: `Front/.codex/agents/troubleshooting-recorder.toml` (자기 참조)"""
 name = "troubleshooting-recorder"

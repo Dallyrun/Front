@@ -47,5 +47,5 @@ Use this skill when the user asks to run the migrated source command `fix-issue`
 
 ## 주의
 
-- 이슈가 모호하면 먼저 `AskUserQuestion` 으로 범위/기대 결과를 확인.
+- 이슈가 모호하면 먼저 사용자에게 범위/기대 결과를 확인.
 - main 에는 절대 직접 커밋 금지.

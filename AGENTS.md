@@ -65,8 +65,8 @@ npm run verify:fast         # typecheck + lint + test 빠른 게이트
 
 - `AGENTS.md` 가 프로젝트 규칙의 단일 소스(SSOT)다.
 - Codex 는 `AGENTS.md` 를 직접 읽는다.
-- Claude Code 는 루트 `CLAUDE.md` 에서 `@AGENTS.md` 를 import 하여 같은 규칙을 읽는다.
-- `CLAUDE.md` 에는 Claude 전용 보충만 둔다. 프로젝트 공통 규칙은 `AGENTS.md` 또는 `.agents/` 에 둔다.
+- Codex 전용 작업 지침과 재사용 가능한 하네스는 `.agents/` 에 둔다.
+- 다른 에이전트용 진입점이나 별도 규칙 파일을 만들지 않는다. 프로젝트 공통 규칙은 `AGENTS.md` 또는 `.agents/` 에 둔다.
 
 ### Verification Gates
 
@@ -112,7 +112,7 @@ npm run verify:fast         # typecheck + lint + test 빠른 게이트
 | 스타일          | Plain CSS + CSS Modules (`*.module.css`)                    |
 | 린트 / 포맷     | ESLint 9 (flat config, `eslint-plugin-import`) + Prettier 3 |
 | 테스트          | Vitest + @testing-library/react + jsdom                     |
-| 에이전트 하네스 | AGENTS.md + CLAUDE.md import + `.agents/FEEDBACK.md`        |
+| 에이전트 하네스 | AGENTS.md + `.agents/` skills/hooks + `.agents/FEEDBACK.md` |
 
 ### Directory Layout
 
@@ -309,15 +309,17 @@ UI 에선 두 가지 모두 `toUserMessage` 로 일관 변환하되, 로그인 4
 
 ## See also
 
-저장소 루트의 `.agents/`, `.claude/`, `.github/`, `CLAUDE.md` 에 프로젝트 전용 자동화 설정이 있다.
+저장소 루트의 `.agents/`, `.codex/`, `.github/` 에 프로젝트 전용 자동화 설정이 있다.
 
 - [`.agents/skills/create-pr/`](./.agents/skills/create-pr/SKILL.md) — 현재 브랜치를 PR 로 올리는 표준 플로우
+- [`.agents/skills/source-command-dev/`](./.agents/skills/source-command-dev/SKILL.md) — 개발 서버 실행 플로우
+- [`.agents/skills/source-command-check/`](./.agents/skills/source-command-check/SKILL.md) — 로컬 검증 게이트 실행 플로우
+- [`.agents/skills/source-command-test/`](./.agents/skills/source-command-test/SKILL.md) — Vitest 실행 플로우
+- [`.agents/skills/source-command-review-pr/`](./.agents/skills/source-command-review-pr/SKILL.md) — 현재 브랜치/PR 리뷰 플로우
+- [`.agents/skills/source-command-fix-issue/`](./.agents/skills/source-command-fix-issue/SKILL.md) — GitHub 이슈 처리 플로우
 - [`.agents/hooks/architecture-alignment.md`](./.agents/hooks/architecture-alignment.md) — 레이어 분리 / 단일 책임 / 의존 방향 체크리스트 (명시 호출용)
 - [`.agents/FEEDBACK.md`](./.agents/FEEDBACK.md) — 검증 실패 / 리뷰 지적 / 트레이드오프 교훈을 누적하는 피드백 루프
-- [`.claude/settings.json`](./.claude/settings.json) — Claude permissions / Stop hook 설정 (`.env*` 읽기·쓰기 차단, 피드백 루프 기록)
-- [`.claude/commands/`](./.claude/commands) — 기존 Claude 슬래시 커맨드
-  - [`/dev`](./.claude/commands/dev.md) · [`/check`](./.claude/commands/check.md) · [`/test`](./.claude/commands/test.md) · [`/review-pr`](./.claude/commands/review-pr.md) · [`/fix-issue`](./.claude/commands/fix-issue.md)
+- [`.codex/agents/troubleshooting-recorder.toml`](./.codex/agents/troubleshooting-recorder.toml) — 피드백 루프 기록 기준을 담은 Codex 보조 에이전트 설정
 - [`.github/pull_request_template.md`](./.github/pull_request_template.md) — PR 검증 게이트와 피드백 루프 체크리스트
-- [`CLAUDE.md`](./CLAUDE.md) — Claude Code 가 `AGENTS.md` 를 import 하는 얇은 진입점
 
-> 프로젝트 규칙(React/테스트/스타일/커밋/검증 게이트)은 본 `AGENTS.md` 가 단일 소스(SSOT)다. 다른 에이전트용 진입점은 이 파일을 import 하거나 참조한다.
+> 프로젝트 규칙(React/테스트/스타일/커밋/검증 게이트)은 본 `AGENTS.md` 가 단일 소스(SSOT)다. Codex 전용 보조 지침은 `.agents/` 와 `.codex/` 에만 둔다.
