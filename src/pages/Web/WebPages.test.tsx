@@ -54,7 +54,7 @@ describe('Web design pages', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: '게시글 상세' })).toBeInTheDocument();
     expect(screen.getByText('러닝 후기')).toBeInTheDocument();
-    expect(screen.getByText('#한강러닝')).toBeInTheDocument();
+    expect(screen.getAllByText('#한강러닝').length).toBeGreaterThan(0);
     expect(screen.getByText(/공유 2/)).toBeInTheDocument();
   });
 

@@ -109,35 +109,65 @@ function RunListItem({ record }: { record: RunRecord }) {
 
 function PostListItem({ post }: { post: Post }) {
   return (
-    <Link to={`/community/${post.id}`} className={styles.listItem}>
-      <span>
-        <strong>{post.title}</strong>
-        <small>
-          {post.author} · {post.category}
-        </small>
+    <Link to={`/community/${post.id}`} className={styles.postCard}>
+      <span className={styles.postAvatar} aria-hidden="true">
+        {post.author.slice(0, 1)}
       </span>
-      <small>
-        좋아요 {post.likeCount} · 댓글 {post.commentCount}
-      </small>
+      <span className={styles.postContent}>
+        <span className={styles.postTopline}>
+          <Chip>{post.category}</Chip>
+          <small>
+            {post.author} · {post.crew} · {post.timeAgo}
+          </small>
+        </span>
+        <strong>{post.title}</strong>
+        <em>{post.body}</em>
+        <span className={styles.postTags}>
+          {post.hashtags.slice(0, 2).map((tag) => (
+            <Chip key={tag} tone="slate">
+              {tag}
+            </Chip>
+          ))}
+        </span>
+        <span className={styles.postMetrics}>
+          <small>좋아요 {post.likeCount}</small>
+          <small>댓글 {post.commentCount}</small>
+          <small>공유 {post.shareCount}</small>
+        </span>
+      </span>
     </Link>
   );
 }
 
+function getRecruitTone(type: Recruit['type']) {
+  return type === '정기런' ? 'green' : type === '번개런' ? 'amber' : 'blue';
+}
+
 function RecruitItem({ recruit, crewId }: { recruit: Recruit; crewId: string }) {
+  const [dateLabel, dayLabel, timeLabel] = recruit.schedule.split(' ');
+
   return (
-    <Link to={`/crews/${crewId}/recruits/${recruit.id}`} className={styles.listItem}>
-      <span>
-        <Chip
-          tone={recruit.type === '정기런' ? 'green' : recruit.type === '번개런' ? 'amber' : 'blue'}
-        >
-          {recruit.type}
-        </Chip>
-        <strong>{recruit.title}</strong>
+    <Link to={`/crews/${crewId}/recruits/${recruit.id}`} className={styles.recruitCard}>
+      <span className={styles.recruitDate}>
+        <strong>{dateLabel}</strong>
         <small>
-          {recruit.schedule} · {recruit.place}
+          {dayLabel} {timeLabel}
         </small>
       </span>
-      <small>{recruit.participants}</small>
+      <span className={styles.recruitContent}>
+        <span className={styles.recruitChips}>
+          <Chip tone={getRecruitTone(recruit.type)}>{recruit.type}</Chip>
+          <Chip tone="slate">{recruit.distance}</Chip>
+        </span>
+        <strong>{recruit.title}</strong>
+        <small>
+          {recruit.place} · {recruit.pace}
+        </small>
+      </span>
+      <span className={styles.recruitStatus}>
+        <strong>{recruit.participants}</strong>
+        <small>참여 현황</small>
+      </span>
     </Link>
   );
 }
@@ -480,10 +510,18 @@ export function PostDetailPage() {
       action={<SecondaryLink to="/community/new">피드 글쓰기</SecondaryLink>}
     >
       <div className={styles.twoColumn}>
-        <Card>
-          <p className={styles.meta}>
-            {post.author} · {post.crew} · {post.timeAgo}
-          </p>
+        <Card className={styles.postDetailCard}>
+          <div className={styles.postDetailAuthor}>
+            <span className={styles.postAvatar} aria-hidden="true">
+              {post.author.slice(0, 1)}
+            </span>
+            <span>
+              <strong>{post.author}</strong>
+              <small>
+                {post.crew} · {post.timeAgo}
+              </small>
+            </span>
+          </div>
           <h2>{post.title}</h2>
           <div className={styles.tabs}>
             <Chip>{post.category}</Chip>
@@ -493,20 +531,26 @@ export function PostDetailPage() {
               </Chip>
             ))}
           </div>
-          <p>{post.body}</p>
+          <p className={styles.postDetailBody}>{post.body}</p>
           {run && <RunListItem record={run} />}
-          <p>
-            좋아요 {post.likeCount} · 댓글 {post.commentCount} · 공유 {post.shareCount}
+          <p className={styles.postDetailMetrics}>
+            <strong>좋아요 {post.likeCount}</strong>
+            <strong>댓글 {post.commentCount}</strong>
+            <strong>공유 {post.shareCount}</strong>
           </p>
           <input aria-label="댓글 입력" placeholder="댓글을 입력하세요" />
-          {post.comments.map((comment) => (
-            <p key={comment}>{comment}</p>
-          ))}
+          <div className={styles.commentList}>
+            {post.comments.map((comment) => (
+              <p key={comment}>{comment}</p>
+            ))}
+          </div>
         </Card>
         <Card title="같은 크루 글">
-          {posts.map((item) => (
-            <PostListItem key={item.id} post={item} />
-          ))}
+          {posts
+            .filter((item) => item.id !== post.id)
+            .map((item) => (
+              <PostListItem key={item.id} post={item} />
+            ))}
         </Card>
       </div>
     </WebShell>
@@ -528,16 +572,60 @@ export function CrewSearchPage() {
           <Chip tone="slate">초급</Chip>
         </div>
       </Card>
-      <div className={styles.cardGrid}>
-        {crews.map((crew) => (
-          <Link key={crew.id} to={`/crews/${crew.id}`} className={styles.crewCard}>
-            <strong>{crew.name}</strong>
-            <span>{crew.area}</span>
-            <small>
-              {crew.memberCount}명 · {crew.averagePace} · {crew.activityTime}
-            </small>
-          </Link>
-        ))}
+      <div className={styles.crewGrid}>
+        {crews.map((crew) => {
+          const nextRecruit = crew.recruits[0];
+
+          return (
+            <Link key={crew.id} to={`/crews/${crew.id}`} className={styles.crewCard}>
+              <span className={styles.crewCardHeader}>
+                <span className={styles.crewAvatar} aria-hidden="true">
+                  {crew.name.slice(0, 1)}
+                </span>
+                <span>
+                  <strong>{crew.name}</strong>
+                  <small>{crew.area}</small>
+                </span>
+              </span>
+              <span className={styles.crewDescription}>{crew.description}</span>
+              <span className={styles.crewMetaGrid}>
+                <span>
+                  <strong>{crew.memberCount}명</strong>
+                  멤버
+                </span>
+                <span>
+                  <strong>{crew.averagePace}</strong>
+                  평균 페이스
+                </span>
+                <span>
+                  <strong>{crew.activityTime}</strong>
+                  활동 시간
+                </span>
+              </span>
+              <span className={styles.crewRecruitHint}>
+                {nextRecruit ? (
+                  <>
+                    <Chip tone={getRecruitTone(nextRecruit.type)}>{nextRecruit.type}</Chip>
+                    <span>
+                      <strong>{nextRecruit.title}</strong>
+                      <small>
+                        {nextRecruit.schedule} · {nextRecruit.participants}
+                      </small>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Chip tone="slate">모집 없음</Chip>
+                    <span>
+                      <strong>새 모집글을 기다리는 중</strong>
+                      <small>크루 상세에서 멤버와 소개를 확인할 수 있어요</small>
+                    </span>
+                  </>
+                )}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </WebShell>
   );
