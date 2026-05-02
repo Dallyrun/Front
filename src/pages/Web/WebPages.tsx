@@ -173,6 +173,8 @@ function RecruitItem({ recruit, crewId }: { recruit: Recruit; crewId: string }) 
 }
 
 type RecordRange = 'weekly' | 'monthly' | 'yearly';
+type CrewFilterKey = 'area' | 'pace' | 'time' | 'level';
+type CrewFilters = Record<CrewFilterKey, string>;
 
 const recordRangeOptions: Array<{
   id: RecordRange;
@@ -218,6 +220,17 @@ const recordRangeOptions: Array<{
     averagePace: profile.averagePace,
     records: runRecords,
   },
+];
+
+const crewFilterGroups: Array<{
+  key: CrewFilterKey;
+  label: string;
+  options: string[];
+}> = [
+  { key: 'area', label: '지역', options: ['전체', '서울', '여의도', '성수'] },
+  { key: 'pace', label: '페이스', options: ['전체', "5'30~6'30", "6'00"] },
+  { key: 'time', label: '시간대', options: ['전체', '평일 저녁', '평일 오전', '주말 오전'] },
+  { key: 'level', label: '레벨', options: ['전체', '초급', '중급'] },
 ];
 
 export function DashboardHomePage() {
@@ -784,75 +797,138 @@ export function PostDetailPage() {
 }
 
 export function CrewSearchPage() {
+  const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState<CrewFilters>({
+    area: '전체',
+    pace: '전체',
+    time: '전체',
+    level: '전체',
+  });
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredCrews = crews.filter((crew) => {
+    const matchesQuery =
+      normalizedQuery.length === 0 ||
+      [crew.name, crew.area, crew.description].some((value) =>
+        value.toLowerCase().includes(normalizedQuery),
+      );
+    const matchesArea = filters.area === '전체' || crew.area.includes(filters.area);
+    const matchesPace = filters.pace === '전체' || crew.averagePace === filters.pace;
+    const matchesTime = filters.time === '전체' || crew.activityTime === filters.time;
+    const matchesLevel = filters.level === '전체' || crew.level === filters.level;
+
+    return matchesQuery && matchesArea && matchesPace && matchesTime && matchesLevel;
+  });
+
+  const updateFilter = (key: CrewFilterKey, value: string) => {
+    setFilters((current) => ({ ...current, [key]: value }));
+  };
+
   return (
     <WebShell
       title="크루 찾기"
       subtitle="지역, 페이스, 시간대로 크루를 탐색합니다."
       action={<SecondaryLink to="/crews/hangang-crew">크루 만들기</SecondaryLink>}
     >
-      <Card>
-        <div className={styles.tabs}>
-          <Chip>서울</Chip>
-          <Chip tone="slate">5'30~6'30</Chip>
-          <Chip tone="slate">평일 저녁</Chip>
-          <Chip tone="slate">초급</Chip>
+      <Card className={styles.crewSearchPanel}>
+        <label className={styles.crewSearchField}>
+          <span>크루 검색</span>
+          <input
+            aria-label="크루 검색"
+            placeholder="크루 이름이나 지역으로 검색"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+        <div className={styles.crewFilterGrid}>
+          {crewFilterGroups.map((group) => (
+            <div key={group.key} className={styles.crewFilterGroup}>
+              <strong>{group.label}</strong>
+              <div role="group" aria-label={`${group.label} 필터`}>
+                {group.options.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className={`${styles.filterButton} ${
+                      filters[group.key] === option ? styles.filterButtonActive : ''
+                    }`}
+                    aria-pressed={filters[group.key] === option}
+                    onClick={() => updateFilter(group.key, option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
+        <p className={styles.filterSummary}>
+          {filteredCrews.length}개 크루가 조건에 맞아요
+          {query.trim() && ` · 검색어 "${query.trim()}"`}
+        </p>
       </Card>
-      <div className={styles.crewGrid}>
-        {crews.map((crew) => {
-          const nextRecruit = crew.recruits[0];
+      {filteredCrews.length > 0 ? (
+        <div className={styles.crewGrid}>
+          {filteredCrews.map((crew) => {
+            const nextRecruit = crew.recruits[0];
 
-          return (
-            <Link key={crew.id} to={`/crews/${crew.id}`} className={styles.crewCard}>
-              <span className={styles.crewCardHeader}>
-                <span className={styles.crewAvatar} aria-hidden="true">
-                  {crew.name.slice(0, 1)}
+            return (
+              <Link key={crew.id} to={`/crews/${crew.id}`} className={styles.crewCard}>
+                <span className={styles.crewCardHeader}>
+                  <span className={styles.crewAvatar} aria-hidden="true">
+                    {crew.name.slice(0, 1)}
+                  </span>
+                  <span>
+                    <strong>{crew.name}</strong>
+                    <small>{crew.area}</small>
+                  </span>
                 </span>
-                <span>
-                  <strong>{crew.name}</strong>
-                  <small>{crew.area}</small>
+                <span className={styles.crewDescription}>{crew.description}</span>
+                <span className={styles.crewMetaGrid}>
+                  <span>
+                    <strong>{crew.memberCount}명</strong>
+                    멤버
+                  </span>
+                  <span>
+                    <strong>{crew.averagePace}</strong>
+                    평균 페이스
+                  </span>
+                  <span>
+                    <strong>{crew.activityTime}</strong>
+                    활동 시간
+                  </span>
                 </span>
-              </span>
-              <span className={styles.crewDescription}>{crew.description}</span>
-              <span className={styles.crewMetaGrid}>
-                <span>
-                  <strong>{crew.memberCount}명</strong>
-                  멤버
+                <span className={styles.crewRecruitHint}>
+                  {nextRecruit ? (
+                    <>
+                      <Chip tone={getRecruitTone(nextRecruit.type)}>{nextRecruit.type}</Chip>
+                      <span>
+                        <strong>{nextRecruit.title}</strong>
+                        <small>
+                          {nextRecruit.schedule} · {nextRecruit.participants}
+                        </small>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Chip tone="slate">모집 없음</Chip>
+                      <span>
+                        <strong>새 모집글을 기다리는 중</strong>
+                        <small>크루 상세에서 멤버와 소개를 확인할 수 있어요</small>
+                      </span>
+                    </>
+                  )}
                 </span>
-                <span>
-                  <strong>{crew.averagePace}</strong>
-                  평균 페이스
-                </span>
-                <span>
-                  <strong>{crew.activityTime}</strong>
-                  활동 시간
-                </span>
-              </span>
-              <span className={styles.crewRecruitHint}>
-                {nextRecruit ? (
-                  <>
-                    <Chip tone={getRecruitTone(nextRecruit.type)}>{nextRecruit.type}</Chip>
-                    <span>
-                      <strong>{nextRecruit.title}</strong>
-                      <small>
-                        {nextRecruit.schedule} · {nextRecruit.participants}
-                      </small>
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Chip tone="slate">모집 없음</Chip>
-                    <span>
-                      <strong>새 모집글을 기다리는 중</strong>
-                      <small>크루 상세에서 멤버와 소개를 확인할 수 있어요</small>
-                    </span>
-                  </>
-                )}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <Card className={styles.emptyCard}>
+          <strong>조건에 맞는 크루가 없어요</strong>
+          <small>검색어를 줄이거나 필터를 전체로 바꿔보세요.</small>
+        </Card>
+      )}
     </WebShell>
   );
 }

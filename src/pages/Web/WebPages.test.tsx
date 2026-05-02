@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CommunityListPage,
   CrewDetailPage,
+  CrewSearchPage,
   DashboardHomePage,
   FollowersPage,
   GoalPage,
@@ -111,6 +112,25 @@ describe('Web design pages', () => {
     expect(screen.getByRole('link', { name: '모집글 만들기' })).toBeInTheDocument();
     expect(screen.getByText('멤버 124')).toBeInTheDocument();
     expect(screen.getAllByText('모집글').length).toBeGreaterThan(0);
+  });
+
+  it('크루 찾기에서 검색과 필터를 조합해 결과를 바꾼다', async () => {
+    const user = userEvent.setup();
+    renderPage(<CrewSearchPage />);
+
+    expect(screen.getByLabelText('크루 검색')).toBeInTheDocument();
+    expect(screen.getByText('2개 크루가 조건에 맞아요')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('크루 검색'), '성수');
+    expect(screen.getByRole('link', { name: /성수 모닝런/ })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /한강 러닝크루/ })).not.toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText('크루 검색'));
+    await user.click(screen.getByRole('button', { name: "6'00" }));
+    expect(screen.getByRole('link', { name: /성수 모닝런/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '주말 오전' }));
+    expect(screen.getByText('조건에 맞는 크루가 없어요')).toBeInTheDocument();
   });
 
   it('프로필과 설정의 사용자 관리 항목을 렌더한다', () => {

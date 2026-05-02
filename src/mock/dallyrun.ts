@@ -221,7 +221,7 @@ export const crews: Crew[] = [
     description: '출근 전 가볍게 달리는 모닝 러닝 크루입니다.',
     memberCount: 58,
     averagePace: "6'00",
-    activityTime: '평일 저녁',
+    activityTime: '평일 오전',
     level: '초급',
     members: ['민지러너', '성수 러너'],
     recruits: [],

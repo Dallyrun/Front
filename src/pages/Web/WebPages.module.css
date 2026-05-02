@@ -1175,6 +1175,82 @@ textarea {
   color: #102033;
 }
 
+.crewSearchPanel {
+  margin-bottom: 24px;
+}
+
+.crewSearchField {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 22px;
+  color: #475569;
+  font-weight: 900;
+}
+
+.crewSearchField input {
+  max-width: 560px;
+  min-height: 48px;
+  border-radius: 16px;
+  background: #f9fbff;
+}
+
+.crewFilterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.crewFilterGroup {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.crewFilterGroup > strong {
+  color: #102033;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 900;
+}
+
+.crewFilterGroup > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filterButton {
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #f1f5fa;
+  color: #5f6f82;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  line-height: 17px;
+  font-weight: 800;
+}
+
+.filterButtonActive {
+  background: #2f6bff;
+  color: #ffffff;
+}
+
+.filterButton:focus-visible {
+  outline: 2px solid #8fb3ff;
+  outline-offset: 2px;
+}
+
+.filterSummary {
+  margin: 20px 0 0;
+  color: #5f6f82;
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 700;
+}
+
 .crewGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -1475,6 +1551,10 @@ textarea {
     grid-template-columns: 1fr;
     gap: 14px;
   }
+
+  .crewFilterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 680px) {
@@ -1562,6 +1642,14 @@ textarea {
   }
 
   .crewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .crewSearchField input {
+    max-width: none;
+  }
+
+  .crewFilterGrid {
     grid-template-columns: 1fr;
   }
 
