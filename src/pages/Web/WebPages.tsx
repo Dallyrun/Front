@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import WebShell from '@/components/WebShell/WebShell';
@@ -172,6 +172,54 @@ function RecruitItem({ recruit, crewId }: { recruit: Recruit; crewId: string }) 
   );
 }
 
+type RecordRange = 'weekly' | 'monthly' | 'yearly';
+
+const recordRangeOptions: Array<{
+  id: RecordRange;
+  label: string;
+  splitTitle: string;
+  sessionTitle: string;
+  distance: string;
+  runCount: string;
+  totalTime: string;
+  averagePace: string;
+  records: typeof runRecords;
+}> = [
+  {
+    id: 'weekly',
+    label: '주간',
+    splitTitle: '이번 주 1km 스플릿',
+    sessionTitle: '이번 주 러닝 세션',
+    distance: '18.4 km',
+    runCount: '3 runs',
+    totalTime: '1h 52m',
+    averagePace: '5\'42"',
+    records: runRecords.slice(0, 2),
+  },
+  {
+    id: 'monthly',
+    label: '월간',
+    splitTitle: '이번 달 1km 스플릿',
+    sessionTitle: '이번 달 러닝 세션',
+    distance: '57.6 km',
+    runCount: '12 runs',
+    totalTime: '5h 48m',
+    averagePace: profile.averagePace,
+    records: runRecords,
+  },
+  {
+    id: 'yearly',
+    label: '연간',
+    splitTitle: '올해 대표 1km 스플릿',
+    sessionTitle: '올해 주요 러닝 세션',
+    distance: profile.totalDistance,
+    runCount: `${profile.runCount} runs`,
+    totalTime: '23h 12m',
+    averagePace: profile.averagePace,
+    records: runRecords,
+  },
+];
+
 export function DashboardHomePage() {
   const progress = Math.round((goal.currentKm / goal.targetKm) * 100);
   const latestRun = getRunRecord('hangang-night-8k');
@@ -274,24 +322,39 @@ export function DashboardHomePage() {
 
 export function RecordsPage() {
   const latestRun = getRunRecord('hangang-night-8k');
+  const [selectedRange, setSelectedRange] = useState<RecordRange>('weekly');
+  const currentRange =
+    recordRangeOptions.find((option) => option.id === selectedRange) ?? recordRangeOptions[0]!;
+
   return (
     <WebShell
       title="기록 분석"
       subtitle="히스토리, 1km 스플릿, 누적 통계와 PR을 쉽게 돌아볼 수 있습니다."
     >
-      <div className={styles.tabs}>
-        <Chip>주간</Chip>
-        <Chip tone="slate">월간</Chip>
-        <Chip tone="slate">연간</Chip>
+      <div className={styles.tabList} role="tablist" aria-label="기록 분석 기간">
+        {recordRangeOptions.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            role="tab"
+            aria-selected={option.id === selectedRange}
+            className={`${styles.tabButton} ${
+              option.id === selectedRange ? styles.tabButtonActive : ''
+            }`}
+            onClick={() => setSelectedRange(option.id)}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
       <div className={styles.statGrid}>
-        <StatCard label="총 누적 거리" value={profile.totalDistance} />
-        <StatCard label="총 러닝" value={`${profile.runCount} runs`} />
-        <StatCard label="총 시간" value="23h 12m" />
-        <StatCard label="평균 페이스" value={profile.averagePace} />
+        <StatCard label="총 누적 거리" value={currentRange.distance} />
+        <StatCard label="총 러닝" value={currentRange.runCount} />
+        <StatCard label="총 시간" value={currentRange.totalTime} />
+        <StatCard label="평균 페이스" value={currentRange.averagePace} />
       </div>
       <div className={styles.twoColumn}>
-        <Card title="최근 러닝 1km 스플릿">
+        <Card title={currentRange.splitTitle}>
           {latestRun.splits.slice(0, 5).map((split) => (
             <div key={split.km} className={styles.splitRow}>
               <span>{split.km}km</span>
@@ -300,8 +363,8 @@ export function RecordsPage() {
             </div>
           ))}
         </Card>
-        <Card title="러닝 세션">
-          {runRecords.map((record) => (
+        <Card title={currentRange.sessionTitle}>
+          {currentRange.records.map((record) => (
             <RunListItem key={record.id} record={record} />
           ))}
         </Card>

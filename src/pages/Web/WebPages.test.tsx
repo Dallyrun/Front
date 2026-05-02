@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -12,6 +13,7 @@ import {
   NotificationsPage,
   PostDetailPage,
   ProfilePage,
+  RecordsPage,
   RunningDetailPage,
   SettingsPage,
   StatesPage,
@@ -47,6 +49,30 @@ describe('Web design pages', () => {
     expect(screen.getByRole('heading', { level: 2, name: '5월 러닝 목표' })).toBeInTheDocument();
     expect(screen.getByText('72%')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '목표 수정' })).toBeInTheDocument();
+  });
+
+  it('기록 분석 기간 탭을 클릭하면 통계 범위가 바뀐다', async () => {
+    const user = userEvent.setup();
+    renderPage(<RecordsPage />);
+
+    expect(screen.getByRole('tab', { name: '주간', selected: true })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: '이번 주 1km 스플릿' }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '월간' }));
+    expect(screen.getByRole('tab', { name: '월간', selected: true })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: '이번 달 1km 스플릿' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('57.6 km')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: '연간' }));
+    expect(screen.getByRole('tab', { name: '연간', selected: true })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: '올해 대표 1km 스플릿' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('247.8km')).toBeInTheDocument();
   });
 
   it('러닝 상세에서 4개 핵심 지표와 메모/사진을 렌더한다', () => {
