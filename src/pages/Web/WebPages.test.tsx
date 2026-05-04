@@ -265,6 +265,36 @@ describe('Web design pages', () => {
     expect(screen.getByText(/JSON 형식/)).toBeInTheDocument();
   });
 
+  it('표시 설정에서 영어와 mile 단위를 저장하고 웹 화면에 반영한다', async () => {
+    const user = userEvent.setup();
+    const settingsView = renderPage(<SettingsPage />);
+
+    await user.click(screen.getByRole('button', { name: /표시 설정/ }));
+    await user.selectOptions(screen.getByLabelText('측정 단위'), 'mile');
+    await user.selectOptions(screen.getByLabelText('언어'), 'en');
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByText(/English · 5.1 mile · Average pace/i)).toBeInTheDocument();
+    expect(localStorage.getItem('dallyrun-web-settings')).toContain('"language":"en"');
+
+    settingsView.unmount();
+    const dashboardView = renderPage(<DashboardHomePage />);
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Running Insight Home' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('11.4 mile')).toBeInTheDocument();
+    expect(screen.getByText('49.7 mile of 35.8 mile completed')).toBeInTheDocument();
+    expect(screen.getByText(/Remaining to this month goal: 13.9 mile left/)).toBeInTheDocument();
+
+    dashboardView.unmount();
+    renderPage(<RecordsPage />);
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'This week 0.6 mile splits' }),
+    ).toBeInTheDocument();
+  });
+
   it('알림 필터, 팔로워 탭, 빈 상태 카탈로그를 렌더한다', async () => {
     const user = userEvent.setup();
     const notificationView = renderPage(<NotificationsPage />);

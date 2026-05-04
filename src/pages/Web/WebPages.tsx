@@ -29,6 +29,14 @@ import type {
   RecruitType,
   RunRecord,
 } from '@/types/dallyrun';
+import {
+  formatDistanceKm,
+  formatDistanceText,
+  formatSplitDistance,
+  translate,
+  useWebSettings,
+  type WebSettings,
+} from '@/utils/webSettings';
 
 import styles from './WebPages.module.css';
 
@@ -39,9 +47,10 @@ interface CardProps {
 }
 
 function Card({ title, children, className = '' }: CardProps) {
+  const [settings] = useWebSettings();
   return (
     <section className={`${styles.card} ${className}`}>
-      {title && <h2>{title}</h2>}
+      {title && <h2>{formatDistanceText(translate(title, settings.language), settings.unit)}</h2>}
       {children}
     </section>
   );
@@ -54,7 +63,13 @@ function Chip({
   children: ReactNode;
   tone?: 'blue' | 'softBlue' | 'green' | 'amber' | 'slate' | 'red';
 }) {
-  return <span className={`${styles.chip} ${styles[`chip${tone}`]}`}>{children}</span>;
+  const [settings] = useWebSettings();
+  const content =
+    typeof children === 'string'
+      ? translate(formatDistanceText(children, settings.unit), settings.language)
+      : children;
+
+  return <span className={`${styles.chip} ${styles[`chip${tone}`]}`}>{content}</span>;
 }
 
 function PrimaryLink({ to, children }: { to: string; children: ReactNode }) {
@@ -118,14 +133,31 @@ function StatCard({
   caption?: string;
   tone?: 'blue' | 'green';
 }) {
+  const [settings] = useWebSettings();
   return (
     <div className={styles.statCard}>
       <span className={`${styles.statAccent} ${styles[`statAccent${tone}`]}`} aria-hidden="true" />
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {caption && <small>{caption}</small>}
+      <span>{translate(label, settings.language)}</span>
+      <strong>{formatDistanceText(translate(value, settings.language), settings.unit)}</strong>
+      {caption && (
+        <small>{formatDistanceText(translate(caption, settings.language), settings.unit)}</small>
+      )}
     </div>
   );
+}
+
+function useWebDisplay() {
+  const [settings, setSettings] = useWebSettings();
+  const t = (value: string) => translate(value, settings.language);
+  const td = (value: string) => formatDistanceText(t(value), settings.unit);
+  const distance = (valueKm: number) => formatDistanceKm(valueKm, settings.unit);
+  const splitDistance = (valueKm: number) => formatSplitDistance(valueKm, settings.unit);
+
+  return { settings, setSettings, t, td, distance, splitDistance };
+}
+
+function displayDistanceText(text: string, settings: WebSettings) {
+  return formatDistanceText(text, settings.unit);
 }
 
 type StoredStateUpdater<T> = T | ((current: T) => T);
@@ -169,7 +201,6 @@ const goalStorageKey = 'dallyrun-web-goal';
 const postsStorageKey = 'dallyrun-web-posts';
 const crewsStorageKey = 'dallyrun-web-crews';
 const profileStorageKey = 'dallyrun-web-profile';
-const settingsStorageKey = 'dallyrun-web-settings';
 const runMemoStorageKey = 'dallyrun-web-run-memos';
 
 function useWebGoal() {
@@ -223,12 +254,14 @@ function ProgressBar({ value }: { value: number }) {
 }
 
 function RunListItem({ record }: { record: RunRecord }) {
+  const { settings } = useWebDisplay();
+
   return (
     <Link to={`/records/${record.id}`} className={styles.listItem}>
       <span>
         <strong>{record.title}</strong>
         <small>
-          {record.distance} · {record.duration}
+          {displayDistanceText(record.distance, settings)} · {record.duration}
         </small>
       </span>
       {record.prStatus && <Chip tone="amber">{record.prStatus}</Chip>}
@@ -237,6 +270,8 @@ function RunListItem({ record }: { record: RunRecord }) {
 }
 
 function PostListItem({ post }: { post: Post }) {
+  const { t } = useWebDisplay();
+
   return (
     <Link to={`/community/${post.id}`} className={styles.postCard}>
       <span className={styles.postAvatar} aria-hidden="true">
@@ -259,9 +294,15 @@ function PostListItem({ post }: { post: Post }) {
           ))}
         </span>
         <span className={styles.postMetrics}>
-          <small>좋아요 {post.likeCount}</small>
-          <small>댓글 {post.commentCount}</small>
-          <small>공유 {post.shareCount}</small>
+          <small>
+            {t('좋아요')} {post.likeCount}
+          </small>
+          <small>
+            {t('댓글')} {post.commentCount}
+          </small>
+          <small>
+            {t('공유')} {post.shareCount}
+          </small>
         </span>
       </span>
     </Link>
@@ -273,6 +314,7 @@ function getRecruitTone(type: Recruit['type']) {
 }
 
 function RecruitItem({ recruit, crewId }: { recruit: Recruit; crewId: string }) {
+  const { settings, t } = useWebDisplay();
   const [dateLabel, dayLabel, timeLabel] = recruit.schedule.split(' ');
 
   return (
@@ -286,7 +328,7 @@ function RecruitItem({ recruit, crewId }: { recruit: Recruit; crewId: string }) 
       <span className={styles.recruitContent}>
         <span className={styles.recruitChips}>
           <Chip tone={getRecruitTone(recruit.type)}>{recruit.type}</Chip>
-          <Chip tone="slate">{recruit.distance}</Chip>
+          <Chip tone="slate">{displayDistanceText(recruit.distance, settings)}</Chip>
         </span>
         <strong>{recruit.title}</strong>
         <small>
@@ -295,7 +337,7 @@ function RecruitItem({ recruit, crewId }: { recruit: Recruit; crewId: string }) 
       </span>
       <span className={styles.recruitStatus}>
         <strong>{recruit.participants}</strong>
-        <small>참여 현황</small>
+        <small>{t('참여 현황')}</small>
       </span>
     </Link>
   );
@@ -363,24 +405,25 @@ const crewFilterGroups: Array<{
 ];
 
 export function DashboardHomePage() {
+  const { settings, t, td, distance } = useWebDisplay();
   const [currentGoal] = useWebGoal();
   const progress = Math.min(
     100,
     Math.round((currentGoal.currentKm / Math.max(currentGoal.targetKm, 1)) * 100),
   );
-  const remainingKm = Math.max(currentGoal.targetKm - currentGoal.currentKm, 0).toFixed(1);
+  const remainingKm = Math.max(currentGoal.targetKm - currentGoal.currentKm, 0);
   const latestRun = getRunRecord('hangang-night-8k');
   const homeFeedPreviews = [
     {
       author: '달리는 수현',
-      meta: '한강 러닝크루 · 23분 전',
-      body: '8.2km 야간런 완료. 마지막 1km 페이스가 가장 좋았어요.',
+      meta: t('한강 러닝크루 · 23분 전'),
+      body: td('8.2km 야간런 완료. 마지막 1km 페이스가 가장 좋았어요.'),
       to: '/community/hangang-review',
     },
     {
       author: '정원오빠',
-      meta: '뱃지 · 댓글 12',
-      body: '100km 클럽 뱃지를 달성했어요. 다음 목표는 꾸준히 150km입니다.',
+      meta: `${t('뱃지')} · ${t('댓글')} 12`,
+      body: td('100km 클럽 뱃지를 달성했어요. 다음 목표는 꾸준히 150km입니다.'),
       to: '/badges/10k-club',
     },
   ];
@@ -388,13 +431,13 @@ export function DashboardHomePage() {
     {
       day: '토요일',
       title: '잠실 새벽 6K 조깅',
-      meta: '06:30 · 잠실나루 · 6\'30" 페이스 · 8/12명',
+      meta: `06:30 · 잠실나루 · 6'30" ${t('페이스')} · 8/12명`,
       to: '/crews/hangang-crew/recruits/friday-8k',
     },
     {
       day: '일요일',
       title: '성수 한강 회복런',
-      meta: '19:00 · 서울숲 · 7\'00" 페이스 · 5/10명',
+      meta: `19:00 · 서울숲 · 7'00" ${t('페이스')} · 5/10명`,
       to: '/crews/seongsu-morning',
     },
   ];
@@ -416,8 +459,9 @@ export function DashboardHomePage() {
             <Chip tone="softBlue">오늘 러닝 상태</Chip>
             <h2>어제 10K 완주 기록이 반영됐어요</h2>
             <p>
-              최근 7일 누적 거리는 18.4km입니다. 기록 상세에서 구간별 페이스와 메모를 확인하고,
-              커뮤니티에 러닝 후기를 남길 수 있습니다.
+              {td(
+                '최근 7일 누적 거리는 18.4km입니다. 기록 상세에서 구간별 페이스와 메모를 확인하고, 커뮤니티에 러닝 후기를 남길 수 있습니다.',
+              )}
             </p>
             <div className={styles.actions}>
               <PrimaryLink to={`/records/${latestRun.id}`}>최근 기록 보기</PrimaryLink>
@@ -428,7 +472,7 @@ export function DashboardHomePage() {
             <span />
             <span />
             <span />
-            <strong>{latestRun.distance}</strong>
+            <strong>{displayDistanceText(latestRun.distance, settings)}</strong>
             <strong>{latestRun.duration}</strong>
           </div>
         </Card>
@@ -436,11 +480,11 @@ export function DashboardHomePage() {
           <strong className={styles.bigNumber}>{progress}%</strong>
           <ProgressBar value={progress} />
           <p>
-            {currentGoal.targetKm}km 중 {currentGoal.currentKm}km 완료
+            {distance(currentGoal.targetKm)} {t('중')} {distance(currentGoal.currentKm)} {t('완료')}
           </p>
           <p>
-            이번 달 남은 목표까지 {remainingKm}km가 남았습니다. 목표 수정에서 주간·월간 거리를 직접
-            조정할 수 있습니다.
+            {t('이번 달 남은 목표까지')} {distance(remainingKm)}
+            {t('가 남았습니다. 목표 수정에서 주간·월간 거리를 직접 조정할 수 있습니다.')}
           </p>
           <SecondaryLink to="/goals/edit">목표 수정</SecondaryLink>
         </Card>
@@ -489,6 +533,7 @@ export function DashboardHomePage() {
 }
 
 export function RecordsPage() {
+  const { t, splitDistance } = useWebDisplay();
   const latestRun = getRunRecord('hangang-night-8k');
   const [selectedRange, setSelectedRange] = useState<RecordRange>('weekly');
   const currentRange =
@@ -499,7 +544,7 @@ export function RecordsPage() {
       title="기록 분석"
       subtitle="히스토리, 1km 스플릿, 누적 통계와 PR을 쉽게 돌아볼 수 있습니다."
     >
-      <div className={styles.tabList} role="tablist" aria-label="기록 분석 기간">
+      <div className={styles.tabList} role="tablist" aria-label={t('기록 분석 기간')}>
         {recordRangeOptions.map((option) => (
           <button
             key={option.id}
@@ -511,7 +556,7 @@ export function RecordsPage() {
             }`}
             onClick={() => setSelectedRange(option.id)}
           >
-            {option.label}
+            {t(option.label)}
           </button>
         ))}
       </div>
@@ -525,7 +570,7 @@ export function RecordsPage() {
         <Card title={currentRange.splitTitle}>
           {latestRun.splits.slice(0, 5).map((split) => (
             <div key={split.km} className={styles.splitRow}>
-              <span>{split.km}km</span>
+              <span>{splitDistance(split.km)}</span>
               <ProgressBar value={split.value} />
               <strong>{split.pace}</strong>
             </div>
@@ -542,6 +587,7 @@ export function RecordsPage() {
 }
 
 export function RunningDetailPage() {
+  const { settings, t, splitDistance } = useWebDisplay();
   const { runId } = useParams();
   const record = getRunRecord(runId);
   const [splitMode, setSplitMode] = useState<'전체' | 'BEST'>('전체');
@@ -557,7 +603,7 @@ export function RunningDetailPage() {
 
   const saveMemo = () => {
     setMemoByRunId({ ...memoByRunId, [record.id]: memoDraft });
-    setMemoStatus('메모가 mock 데이터에 저장됐어요.');
+    setMemoStatus(t('메모가 mock 데이터에 저장됐어요.'));
   };
 
   return (
@@ -575,7 +621,7 @@ export function RunningDetailPage() {
           </p>
         </div>
         <div className={styles.statGrid}>
-          <StatCard label="거리" value={record.distance} />
+          <StatCard label="거리" value={displayDistanceText(record.distance, settings)} />
           <StatCard label="시간" value={record.duration} />
           <StatCard label="평균 페이스" value={record.pace} />
           <StatCard label="칼로리" value={record.calories} />
@@ -583,7 +629,7 @@ export function RunningDetailPage() {
       </Card>
       <div className={styles.twoColumn}>
         <Card title="구간별 페이스">
-          <div className={styles.tabList} role="tablist" aria-label="스플릿 보기 방식">
+          <div className={styles.tabList} role="tablist" aria-label={t('스플릿 보기 방식')}>
             {(['전체', 'BEST'] as const).map((mode) => (
               <button
                 key={mode}
@@ -601,7 +647,7 @@ export function RunningDetailPage() {
           </div>
           {visibleSplits.map((split) => (
             <div key={split.km} className={styles.splitRow}>
-              <span>{split.km}km</span>
+              <span>{splitDistance(split.km)}</span>
               <ProgressBar value={split.value} />
               <strong>{split.isBest ? 'BEST' : split.pace}</strong>
             </div>
@@ -624,13 +670,13 @@ export function RunningDetailPage() {
             ))}
           </div>
           <div className={styles.settingsPreview}>
-            <strong>선택한 사진</strong>
-            <span>{selectedPhoto || '사진 없음'}</span>
+            <strong>{t('선택한 사진')}</strong>
+            <span>{selectedPhoto || t('사진 없음')}</span>
           </div>
           <label className={styles.compactSearch}>
-            러닝 메모
+            {t('러닝 메모')}
             <textarea
-              aria-label="러닝 메모"
+              aria-label={t('러닝 메모')}
               value={memoDraft}
               onChange={(event) => {
                 setMemoDraft(event.target.value);
@@ -642,12 +688,12 @@ export function RunningDetailPage() {
             <SecondaryButton
               onClick={() => {
                 setMemoDraft(record.memo);
-                setMemoStatus('기본 메모로 되돌렸어요.');
+                setMemoStatus(t('기본 메모로 되돌렸어요.'));
               }}
             >
-              되돌리기
+              {t('되돌리기')}
             </SecondaryButton>
-            <PrimaryButton onClick={saveMemo}>메모 저장</PrimaryButton>
+            <PrimaryButton onClick={saveMemo}>{t('메모 저장')}</PrimaryButton>
           </div>
           {memoStatus && <p className={styles.statusMessage}>{memoStatus}</p>}
         </Card>
@@ -657,9 +703,10 @@ export function RunningDetailPage() {
 }
 
 export function GoalPage() {
+  const { t, distance } = useWebDisplay();
   const [currentGoal] = useWebGoal();
   const progress = Math.round((currentGoal.currentKm / currentGoal.targetKm) * 100);
-  const remainingKm = Math.max(currentGoal.targetKm - currentGoal.currentKm, 0).toFixed(1);
+  const remainingKm = Math.max(currentGoal.targetKm - currentGoal.currentKm, 0);
   const heatmapValues = [
     72, 44, 0, 88, 60, 38, 0, 92, 55, 28, 76, 0, 66, 82, 40, 0, 58, 94, 36, 64, 48,
   ];
@@ -680,33 +727,34 @@ export function GoalPage() {
           <div className={styles.goalProgressSummary}>
             <strong>{progress}%</strong>
             <span>
-              {currentGoal.targetKm}km 중 {currentGoal.currentKm}km 완료 · 남은 거리 {remainingKm}km
+              {distance(currentGoal.targetKm)} {t('중')} {distance(currentGoal.currentKm)}{' '}
+              {t('완료')} · {t('남은 거리')} {distance(remainingKm)}
             </span>
           </div>
           <ProgressBar value={progress} />
         </div>
         <div className={styles.goalHeroStats}>
           <span>
-            <strong>{currentGoal.currentKm}km</strong>
-            현재 거리
+            <strong>{distance(currentGoal.currentKm)}</strong>
+            {t('현재 거리')}
           </span>
           <span>
-            <strong>{currentGoal.targetKm}km</strong>
-            목표 거리
+            <strong>{distance(currentGoal.targetKm)}</strong>
+            {t('목표 거리')}
           </span>
           <span>
-            <strong>{remainingKm}km</strong>
-            남은 거리
+            <strong>{distance(remainingKm)}</strong>
+            {t('남은 거리')}
           </span>
           <span>
             <strong>12회</strong>
-            이번 목표 러닝
+            {t('이번 목표 러닝')}
           </span>
         </div>
       </section>
       <div className={styles.twoColumn}>
         <Card title="달성 캘린더">
-          <div className={styles.goalHeatmap} aria-label="목표 달성 캘린더">
+          <div className={styles.goalHeatmap} aria-label={t('목표 달성 캘린더')}>
             {heatmapValues.map((value, index) => (
               <span
                 key={`goal-heat-${index}-${value}`}
@@ -714,7 +762,7 @@ export function GoalPage() {
               />
             ))}
           </div>
-          <p>러닝한 날이 많을수록 진하게 표시됩니다.</p>
+          <p>{t('러닝한 날이 많을수록 진하게 표시됩니다.')}</p>
         </Card>
         <Card title="목표에 반영된 최근 기록">
           {runRecords.slice(0, 3).map((record) => (
@@ -725,8 +773,8 @@ export function GoalPage() {
       <Card title="목표 관리">
         <div className={styles.goalManagement}>
           <span>
-            <strong>목표를 바꾸고 싶나요?</strong>
-            기간과 거리만 수정하면 현재 달성률이 다시 계산됩니다.
+            <strong>{t('목표를 바꾸고 싶나요?')}</strong>
+            {t('기간과 거리만 수정하면 현재 달성률이 다시 계산됩니다.')}
           </span>
           <SecondaryLink to="/goals/edit">목표 설정 / 수정</SecondaryLink>
         </div>
@@ -736,6 +784,7 @@ export function GoalPage() {
 }
 
 export function GoalEditPage() {
+  const { t, distance } = useWebDisplay();
   const navigate = useNavigate();
   const [storedGoal, setStoredGoal] = useWebGoal();
   const [draft, setDraft] = useState<Goal>(storedGoal);
@@ -744,16 +793,16 @@ export function GoalEditPage() {
     100,
     Math.round((draft.currentKm / Math.max(Number(draft.targetKm), 1)) * 100),
   );
-  const remainingKm = Math.max(Number(draft.targetKm) - draft.currentKm, 0).toFixed(1);
+  const remainingKm = Math.max(Number(draft.targetKm) - draft.currentKm, 0);
   const isGoalInvalid = draft.title.trim().length === 0 || Number(draft.targetKm) <= 0;
 
   const saveGoal = () => {
     if (isGoalInvalid) {
-      setStatus('목표 이름과 목표 거리를 확인해주세요.');
+      setStatus(t('목표 이름과 목표 거리를 확인해주세요.'));
       return;
     }
     setStoredGoal(draft);
-    setStatus('목표가 mock 데이터에 저장됐어요.');
+    setStatus(t('목표가 mock 데이터에 저장됐어요.'));
   };
 
   return (
@@ -762,8 +811,8 @@ export function GoalEditPage() {
       subtitle="주간·월간 거리 목표를 직접 입력하고 수정합니다."
       action={
         <>
-          <SecondaryLink to="/goals">목표 보기</SecondaryLink>
-          <PrimaryButton onClick={saveGoal}>저장하기</PrimaryButton>
+          <SecondaryLink to="/goals">{t('목표 보기')}</SecondaryLink>
+          <PrimaryButton onClick={saveGoal}>{t('저장하기')}</PrimaryButton>
         </>
       }
     >
@@ -771,15 +820,15 @@ export function GoalEditPage() {
         <Card title="거리 목표">
           <div className={styles.formGrid}>
             <label>
-              목표 이름
+              {t('목표 이름')}
               <input
                 value={draft.title}
                 onChange={(event) => setDraft({ ...draft, title: event.target.value })}
               />
             </label>
             <div className={styles.formField}>
-              <span>기간</span>
-              <div className={styles.inlineSegment} role="tablist" aria-label="목표 기간">
+              <span>{t('기간')}</span>
+              <div className={styles.inlineSegment} role="tablist" aria-label={t('목표 기간')}>
                 {(['주간', '월간'] as const).map((period) => (
                   <button
                     key={period}
@@ -791,13 +840,13 @@ export function GoalEditPage() {
                     }`}
                     onClick={() => setDraft({ ...draft, period })}
                   >
-                    {period}
+                    {t(period)}
                   </button>
                 ))}
               </div>
             </div>
             <label>
-              목표 거리
+              {t('목표 거리')}
               <input
                 type="number"
                 min="1"
@@ -808,7 +857,7 @@ export function GoalEditPage() {
               />
             </label>
             <label>
-              현재 거리
+              {t('현재 거리')}
               <input
                 type="number"
                 min="0"
@@ -819,22 +868,22 @@ export function GoalEditPage() {
               />
             </label>
             <label>
-              시작일
+              {t('시작일')}
               <input
                 value={draft.startDate}
                 onChange={(event) => setDraft({ ...draft, startDate: event.target.value })}
               />
             </label>
             <label>
-              종료일
+              {t('종료일')}
               <input
                 value={draft.endDate}
                 onChange={(event) => setDraft({ ...draft, endDate: event.target.value })}
               />
             </label>
             <div className={styles.formWide}>
-              <strong>거리 프리셋</strong>
-              <div className={styles.inlineSegment} aria-label="목표 거리 프리셋">
+              <strong>{t('거리 프리셋')}</strong>
+              <div className={styles.inlineSegment} aria-label={t('목표 거리 프리셋')}>
                 {goalTargetPresets.map((preset) => (
                   <button
                     key={preset}
@@ -845,7 +894,7 @@ export function GoalEditPage() {
                     aria-pressed={draft.targetKm === preset}
                     onClick={() => setDraft({ ...draft, targetKm: preset })}
                   >
-                    {preset}km
+                    {distance(preset)}
                   </button>
                 ))}
               </div>
@@ -857,11 +906,14 @@ export function GoalEditPage() {
           <strong className={styles.bigNumber}>{previewProgress}%</strong>
           <ProgressBar value={previewProgress} />
           <p>
-            {draft.targetKm}km 중 {draft.currentKm}km 완료 · 남은 거리 {remainingKm}km
+            {distance(draft.targetKm)} {t('중')} {distance(draft.currentKm)} {t('완료')} ·{' '}
+            {t('남은 거리')} {distance(remainingKm)}
           </p>
-          <p>러닝 12회 · 평균 페이스 5'34&quot;</p>
+          <p>
+            {t('러닝')} 12회 · {t('평균 페이스')} 5'34&quot;
+          </p>
           <div className={styles.actions}>
-            <SecondaryButton onClick={() => setDraft(storedGoal)}>되돌리기</SecondaryButton>
+            <SecondaryButton onClick={() => setDraft(storedGoal)}>{t('되돌리기')}</SecondaryButton>
             <PrimaryButton
               disabled={isGoalInvalid}
               onClick={() => {
@@ -869,7 +921,7 @@ export function GoalEditPage() {
                 if (!isGoalInvalid) navigate('/goals');
               }}
             >
-              저장 후 보기
+              {t('저장 후 보기')}
             </PrimaryButton>
           </div>
         </Card>
@@ -915,6 +967,7 @@ export function BadgeListPage() {
 }
 
 export function BadgeDetailPage() {
+  const { settings, t } = useWebDisplay();
   const { badgeId } = useParams();
   const badge = getBadge(badgeId);
   const [activeTab, setActiveTab] = useState<'조건' | '관련 기록'>('조건');
@@ -934,7 +987,9 @@ export function BadgeDetailPage() {
           <h2>{badge.title}</h2>
           <p>{badge.description}</p>
           <ProgressBar value={badgeProgressValue} />
-          <p>조건 달성 {badge.progress}</p>
+          <p>
+            {t('조건 달성')} {displayDistanceText(badge.progress, settings)}
+          </p>
         </div>
       </Card>
       <div className={styles.tabList} role="tablist" aria-label="뱃지 상세 탭">
@@ -1562,6 +1617,7 @@ export function CrewDetailPage() {
 }
 
 export function RecruitComposePage() {
+  const { settings, t } = useWebDisplay();
   const { crewId } = useParams();
   const [webCrews, setWebCrews] = useWebCrews();
   const crew = getWebCrew(webCrews, crewId);
@@ -1689,16 +1745,16 @@ export function RecruitComposePage() {
             <span className={styles.recruitContent}>
               <span className={styles.recruitChips}>
                 <Chip tone={getRecruitTone(type)}>{type}</Chip>
-                <Chip tone="slate">{distance}</Chip>
+                <Chip tone="slate">{displayDistanceText(distance, settings)}</Chip>
               </span>
               <strong>{title || '제목을 입력하세요'}</strong>
               <small>
-                {place} · {pace} · {shouldNotify ? '푸시 알림 전송' : '푸시 알림 없음'}
+                {place} · {pace} · {shouldNotify ? t('푸시 알림 전송') : t('푸시 알림 없음')}
               </small>
             </span>
             <span className={styles.recruitStatus}>
               <strong>{participants}</strong>
-              <small>모집 인원</small>
+              <small>{t('모집 인원')}</small>
             </span>
           </div>
           <p>{description}</p>
@@ -1709,6 +1765,7 @@ export function RecruitComposePage() {
 }
 
 export function RecruitDetailPage() {
+  const { settings } = useWebDisplay();
   const { crewId, recruitId } = useParams();
   const [webCrews] = useWebCrews();
   const { crew, recruit } = getWebRecruit(webCrews, crewId, recruitId);
@@ -1736,7 +1793,7 @@ export function RecruitDetailPage() {
           <div className={styles.tabs}>
             <Chip tone="slate">{recruit.schedule}</Chip>
             <Chip tone="slate">{recruit.place}</Chip>
-            <Chip tone="slate">{recruit.distance}</Chip>
+            <Chip tone="slate">{displayDistanceText(recruit.distance, settings)}</Chip>
             <Chip tone="slate">{recruit.pace}</Chip>
             <Chip tone="slate">{participantText}</Chip>
           </div>
@@ -1763,6 +1820,7 @@ export function RecruitDetailPage() {
 }
 
 export function ProfilePage() {
+  const { settings, t } = useWebDisplay();
   const [webProfile] = useWebProfile();
   return (
     <WebShell
@@ -1777,24 +1835,24 @@ export function ProfilePage() {
           <h2>{webProfile.nickname}</h2>
           <p>{webProfile.bio}</p>
           <Link to="/followers" className={styles.inlineLink}>
-            팔로워 {webProfile.followerCount} · 팔로잉 {webProfile.followingCount}
+            {t('팔로워')} {webProfile.followerCount} · {t('팔로잉')} {webProfile.followingCount}
           </Link>
           <div className={styles.profileHeroStats}>
             <span>
-              <strong>{webProfile.totalDistance}</strong>
-              누적 거리
+              <strong>{displayDistanceText(webProfile.totalDistance, settings)}</strong>
+              {t('누적 거리')}
             </span>
             <span>
               <strong>{webProfile.runCount}</strong>
-              러닝
+              {t('러닝')}
             </span>
             <span>
               <strong>{webProfile.averagePace}</strong>
-              평균 페이스
+              {t('평균 페이스')}
             </span>
             <span>
               <strong>{webProfile.badgeCount}</strong>
-              뱃지
+              {t('뱃지')}
             </span>
           </div>
         </div>
@@ -1830,8 +1888,8 @@ export function ProfilePage() {
       <Card title="계정 설정">
         <div className={styles.goalManagement}>
           <span>
-            <strong>설정에서 계정을 관리할 수 있어요</strong>
-            알림, 측정 단위, 언어, 데이터 다운로드, 로그아웃과 회원탈퇴를 설정합니다.
+            <strong>{t('설정에서 계정을 관리할 수 있어요')}</strong>
+            {t('알림, 측정 단위, 언어, 데이터 다운로드, 로그아웃과 회원탈퇴를 설정합니다.')}
           </span>
           <PrimaryLink to="/settings">설정 열기</PrimaryLink>
         </div>
@@ -1905,14 +1963,8 @@ export function ProfileEditPage() {
 }
 
 export function SettingsPage() {
+  const { settings, setSettings, t, distance } = useWebDisplay();
   const [webProfile, setWebProfile] = useWebProfile();
-  const [settings, setSettings] = useStoredState(settingsStorageKey, {
-    unit: 'km',
-    language: '한국어',
-    notificationSocial: true,
-    notificationCrew: true,
-    notificationBadge: true,
-  });
   const [activePanel, setActivePanel] = useState<
     | 'privacy'
     | 'notifications'
@@ -1998,8 +2050,8 @@ export function SettingsPage() {
                 }`}
                 onClick={() => openPanel(item.key)}
               >
-                <strong>{item.label}</strong>
-                <span>{item.description}</span>
+                <strong>{t(item.label)}</strong>
+                <span>{t(item.description)}</span>
               </button>
             ))}
           </div>
@@ -2007,8 +2059,8 @@ export function SettingsPage() {
         <Card title="상세 설정" className={styles.settingsDetailCard}>
           {activePanel === 'privacy' && (
             <div className={styles.settingsPanel}>
-              <h3>공개 범위 설정</h3>
-              <p>프로필, 누적 통계, 러닝 기록이 누구에게 보일지 선택합니다.</p>
+              <h3>{t('공개 범위 설정')}</h3>
+              <p>{t('프로필, 누적 통계, 러닝 기록이 누구에게 보일지 선택합니다.')}</p>
               <div className={styles.settingsSegment}>
                 {privacyOptions.map((option) => (
                   <button
@@ -2019,11 +2071,11 @@ export function SettingsPage() {
                     }`}
                     onClick={() => {
                       setWebProfile({ ...webProfile, privacy: option.value });
-                      setStatus(`${option.label}로 공개 범위를 변경했어요.`);
+                      setStatus(`${t(option.label)}${t('로 공개 범위를 변경했어요.')}`);
                     }}
                   >
-                    <strong>{option.label}</strong>
-                    <span>{option.description}</span>
+                    <strong>{t(option.label)}</strong>
+                    <span>{t(option.description)}</span>
                   </button>
                 ))}
               </div>
@@ -2032,14 +2084,14 @@ export function SettingsPage() {
 
           {activePanel === 'notifications' && (
             <div className={styles.settingsPanel}>
-              <h3>알림 설정</h3>
-              <p>필요한 알림만 남겨두면 대시보드와 알림 페이지가 덜 번잡해집니다.</p>
+              <h3>{t('알림 설정')}</h3>
+              <p>{t('필요한 알림만 남겨두면 대시보드와 알림 페이지가 덜 번잡해집니다.')}</p>
               <div className={styles.toggleList}>
                 {notificationSettingItems.map(({ key, label, description }) => (
                   <label key={key} className={styles.settingToggle}>
                     <span>
-                      <strong>{label}</strong>
-                      <small>{description}</small>
+                      <strong>{t(label)}</strong>
+                      <small>{t(description)}</small>
                     </span>
                     <input
                       type="checkbox"
@@ -2056,35 +2108,45 @@ export function SettingsPage() {
 
           {activePanel === 'display' && (
             <div className={styles.settingsPanel}>
-              <h3>표시 설정</h3>
-              <p>러닝 거리와 화면 언어 표기를 현재 사용 습관에 맞춥니다.</p>
+              <h3>{t('표시 설정')}</h3>
+              <p>{t('러닝 거리와 화면 언어 표기를 현재 사용 습관에 맞춥니다.')}</p>
               <div className={styles.formGrid}>
                 <label>
-                  측정 단위
+                  {t('측정 단위')}
                   <select
                     value={settings.unit}
-                    onChange={(event) => setSettings({ ...settings, unit: event.target.value })}
+                    onChange={(event) =>
+                      setSettings({
+                        ...settings,
+                        unit: event.target.value === 'mile' ? 'mile' : 'km',
+                      })
+                    }
                   >
-                    <option>km</option>
-                    <option>mile</option>
+                    <option value="km">km</option>
+                    <option value="mile">mile</option>
                   </select>
                 </label>
                 <label>
-                  언어
+                  {t('언어')}
                   <select
                     value={settings.language}
-                    onChange={(event) => setSettings({ ...settings, language: event.target.value })}
+                    onChange={(event) =>
+                      setSettings({
+                        ...settings,
+                        language: event.target.value === 'en' ? 'en' : 'ko',
+                      })
+                    }
                   >
-                    <option>한국어</option>
-                    <option>English</option>
+                    <option value="ko">{t('한국어')}</option>
+                    <option value="en">English</option>
                   </select>
                 </label>
               </div>
               <div className={styles.settingsPreview}>
-                <strong>미리보기</strong>
+                <strong>{t('미리보기')}</strong>
                 <span>
-                  {settings.language} · {settings.unit === 'km' ? '8.2 km' : '5.1 mile'} · 평균
-                  페이스 5'23&quot;
+                  {settings.language === 'en' ? 'English' : t('한국어')} · {distance(8.2)} ·{' '}
+                  {t('평균 페이스')} 5'23&quot;
                 </span>
               </div>
             </div>
