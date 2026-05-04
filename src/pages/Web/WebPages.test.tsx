@@ -278,12 +278,19 @@ describe('Web design pages', () => {
     expect(localStorage.getItem('dallyrun-web-settings')).toContain('"language":"en"');
 
     settingsView.unmount();
-    renderPage(<DashboardHomePage />);
+    const dashboardView = renderPage(<DashboardHomePage />);
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Running Insight Home' }),
     ).toBeInTheDocument();
     expect(screen.getByText('11.4 mile')).toBeInTheDocument();
+
+    dashboardView.unmount();
+    renderPage(<RecordsPage />);
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'This week 0.6 mile splits' }),
+    ).toBeInTheDocument();
   });
 
   it('알림 필터, 팔로워 탭, 빈 상태 카탈로그를 렌더한다', async () => {

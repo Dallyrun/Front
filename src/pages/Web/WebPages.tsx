@@ -50,7 +50,7 @@ function Card({ title, children, className = '' }: CardProps) {
   const [settings] = useWebSettings();
   return (
     <section className={`${styles.card} ${className}`}>
-      {title && <h2>{translate(formatDistanceText(title, settings.unit), settings.language)}</h2>}
+      {title && <h2>{formatDistanceText(translate(title, settings.language), settings.unit)}</h2>}
       {children}
     </section>
   );
