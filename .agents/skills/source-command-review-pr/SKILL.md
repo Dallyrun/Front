@@ -26,6 +26,8 @@ Use this skill when the user asks to run the migrated source command `review-pr`
    **리뷰 원칙**
    - 직접 `main...HEAD` diff 와 PR 본문을 읽고 판단한다.
    - CI, hook, 서브에이전트 결과는 보조 신호로만 사용한다.
+   - 리뷰 결과는 기본적으로 **한국어**로 작성한다. 코드 식별자, 에러 메시지, 외부 API 이름처럼
+     원문이 중요한 항목만 영어를 유지한다.
    - 발견 사항은 버그/회귀 위험/테스트 누락을 우선하고 심각도 순으로 제시한다.
    - 각 발견 사항에는 정확한 `파일:라인`, 재현 조건 또는 영향, 수정 방향을 포함한다.
    - 발견 사항이 없으면 "발견 사항 없음" 을 명확히 쓰고 남은 테스트 공백만 적는다.
@@ -61,7 +63,7 @@ Use this skill when the user asks to run the migrated source command `review-pr`
    - 발견 사항이 있으면 심각도 순 목록을 먼저 출력
    - 그 다음 체크리스트 평가를 출력
    - 위반/의심 항목은 **정확한 파일:라인** 을 포함
-   - 마지막에 Open questions / Summary 를 짧게 출력
+   - 마지막에 `확인 질문` / `요약` 을 짧게 출력
 
 ## 참고
 
