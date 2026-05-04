@@ -284,6 +284,8 @@ describe('Web design pages', () => {
       screen.getByRole('heading', { level: 1, name: 'Running Insight Home' }),
     ).toBeInTheDocument();
     expect(screen.getByText('11.4 mile')).toBeInTheDocument();
+    expect(screen.getByText('49.7 mile of 35.8 mile completed')).toBeInTheDocument();
+    expect(screen.getByText(/Remaining to this month goal: 13.9 mile left/)).toBeInTheDocument();
 
     dashboardView.unmount();
     renderPage(<RecordsPage />);

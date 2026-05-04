@@ -139,6 +139,11 @@ const translations: Record<string, string> = {
   '최근 러닝 요약': 'Latest run summary',
   '월간 목표': 'Monthly goal',
   '주간 목표': 'Weekly goal',
+  중: 'of',
+  완료: 'completed',
+  '이번 달 남은 목표까지': 'Remaining to this month goal:',
+  '가 남았습니다. 목표 수정에서 주간·월간 거리를 직접 조정할 수 있습니다.':
+    ' left. You can adjust weekly or monthly distance in goal edit.',
   '목표 수정': 'Edit goal',
   '이번 주 거리': 'This week distance',
   '평균 페이스': 'Average pace',
