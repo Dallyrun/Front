@@ -4,6 +4,12 @@ import type { FormEvent, ReactNode } from 'react';
 
 import logoIcon from '@/asset/dallyrunicon.png';
 import { badges, crews, notifications, posts, profile, runRecords } from '@/mock/dallyrun';
+import {
+  formatDistanceText,
+  translate,
+  useWebSettings,
+  type WebLanguage,
+} from '@/utils/webSettings';
 
 import styles from './WebShell.module.css';
 
@@ -24,19 +30,29 @@ const navItems = [
   { to: '/settings', label: '설정', icon: 'S' },
 ];
 
+function copy(value: string, language: WebLanguage) {
+  return translate(value, language);
+}
+
 function WebShell({ title, subtitle, action, children }: WebShellProps) {
   const navigate = useNavigate();
+  const [settings] = useWebSettings();
+  const t = (value: string) => copy(value, settings.language);
+  const distance = (value: string) => formatDistanceText(value, settings.unit);
   const [searchQuery, setSearchQuery] = useState('');
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const searchResults = useMemo(() => {
     if (!normalizedQuery) return [];
 
+    const searchCopy = (value: string) => copy(value, settings.language);
+    const searchDistance = (value: string) => formatDistanceText(value, settings.unit);
+
     return [
       ...runRecords.map((record) => ({
         type: '기록',
         title: record.title,
-        meta: `${record.place} · ${record.distance}`,
+        meta: `${record.place} · ${searchDistance(record.distance)}`,
         to: `/records/${record.id}`,
       })),
       ...posts.map((post) => ({
@@ -54,7 +70,7 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
       ...badges.map((badge) => ({
         type: '뱃지',
         title: badge.title,
-        meta: `${badge.status} · ${badge.category}`,
+        meta: `${searchCopy(badge.status)} · ${badge.category}`,
         to: `/badges/${badge.id}`,
       })),
     ]
@@ -64,7 +80,7 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
         ),
       )
       .slice(0, 6);
-  }, [normalizedQuery]);
+  }, [normalizedQuery, settings.language, settings.unit]);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -82,7 +98,7 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
 
   return (
     <div className={styles.shell}>
-      <aside className={styles.sidebar} aria-label="주요 메뉴">
+      <aside className={styles.sidebar} aria-label={t('주요 메뉴')}>
         <div className={styles.brand}>
           <img src={logoIcon} alt="" aria-hidden="true" draggable={false} />
           <span>
@@ -100,7 +116,7 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
               }
             >
               <span className={styles.navIcon}>{item.icon}</span>
-              {item.label}
+              {t(item.label)}
             </NavLink>
           ))}
         </nav>
@@ -116,16 +132,16 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
       <main className={styles.main}>
         <header className={styles.header}>
           <div>
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
+            <h1>{t(title)}</h1>
+            <p>{distance(t(subtitle))}</p>
           </div>
           <div className={styles.headerTools}>
             <form className={styles.searchWrap} onSubmit={handleSearchSubmit}>
               <label className={styles.search}>
                 <span aria-hidden="true">⌕</span>
                 <input
-                  placeholder="기록·크루 검색"
-                  aria-label="기록·크루 검색"
+                  placeholder={t('기록·크루 검색')}
+                  aria-label={t('기록·크루 검색')}
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                 />
@@ -137,13 +153,13 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
                       <Link key={`${item.type}-${item.to}`} to={item.to}>
                         <strong>{item.title}</strong>
                         <span>
-                          {item.type} · {item.meta}
+                          {t(item.type)} · {item.meta}
                         </span>
                       </Link>
                     ))
                   ) : (
                     <span className={styles.emptySearch}>
-                      검색 결과가 없어요. Enter로 태그 검색
+                      {t('검색 결과가 없어요. Enter로 태그 검색')}
                     </span>
                   )}
                 </div>
@@ -153,7 +169,7 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label="알림"
+                aria-label={t('알림')}
                 aria-expanded={isNotificationOpen}
                 onClick={() => setIsNotificationOpen((current) => !current)}
               >
@@ -161,15 +177,15 @@ function WebShell({ title, subtitle, action, children }: WebShellProps) {
               </button>
               {isNotificationOpen && (
                 <div className={styles.notificationPanel}>
-                  <strong>최근 알림</strong>
+                  <strong>{t('최근 알림')}</strong>
                   {notifications.slice(0, 5).map((item) => (
                     <Link key={item.id} to="/notifications">
-                      <small>{item.category}</small>
+                      <small>{t(item.category)}</small>
                       <span>{item.title}</span>
                     </Link>
                   ))}
                   <Link to="/notifications" className={styles.notificationMore}>
-                    전체 알림 보기
+                    {t('전체 알림 보기')}
                   </Link>
                 </div>
               )}
